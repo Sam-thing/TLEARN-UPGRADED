@@ -11,7 +11,8 @@ import {
   Star,
   Clock,
   Users,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,29 +73,76 @@ const TopicsPage = () => {
 
   const loadTopics = async () => {
     try {
+      console.log('🔍 TopicsPage: Fetching topics...');
+      
       const [allTopics, popular] = await Promise.all([
         topicService.getAll(),
         topicService.getPopular()
       ]);
       
-      // FIX: Ensure arrays and log data
-      const topicsArray = Array.isArray(allTopics) ? allTopics : [];
-      const popularArray = Array.isArray(popular) ? popular : [];
+      console.log('📚 TopicsPage - Raw responses:');
+      console.log('All topics raw:', allTopics);
+      console.log('All topics type:', typeof allTopics);
+      console.log('All topics keys:', Object.keys(allTopics || {}));
+      console.log('Popular raw:', popular);
+      console.log('Popular type:', typeof popular);
       
-      console.log('📚 Topics loaded:', topicsArray.length, 'topics');
-      console.log('⭐ Popular topics:', popularArray.length, 'topics');
+      // FIX: Extract topics using SAME logic as Dashboard
+      let topicsArray = [];
+      if (Array.isArray(allTopics)) {
+        topicsArray = allTopics;
+        console.log('✅ All topics is direct array');
+      } else if (allTopics?.topics && Array.isArray(allTopics.topics)) {
+        topicsArray = allTopics.topics;
+        console.log('✅ All topics found in .topics');
+      } else if (allTopics?.data?.topics && Array.isArray(allTopics.data.topics)) {
+        topicsArray = allTopics.data.topics;
+        console.log('✅ All topics found in .data.topics');
+      } else if (allTopics?.data && Array.isArray(allTopics.data)) {
+        topicsArray = allTopics.data;
+        console.log('✅ All topics found in .data');
+      } else {
+        console.warn('❌ Could not extract topics from:', allTopics);
+      }
+      
+      let popularArray = [];
+      if (Array.isArray(popular)) {
+        popularArray = popular;
+        console.log('✅ Popular is direct array');
+      } else if (popular?.topics && Array.isArray(popular.topics)) {
+        popularArray = popular.topics;
+        console.log('✅ Popular found in .topics');
+      } else if (popular?.data?.topics && Array.isArray(popular.data.topics)) {
+        popularArray = popular.data.topics;
+        console.log('✅ Popular found in .data.topics');
+      } else if (popular?.data && Array.isArray(popular.data)) {
+        popularArray = popular.data;
+        console.log('✅ Popular found in .data');
+      } else {
+        console.warn('❌ Could not extract popular from:', popular);
+      }
+      
+      console.log('📊 Final counts:');
+      console.log('All topics:', topicsArray.length);
+      console.log('Popular topics:', popularArray.length);
+      
+      // Log first topic for inspection
+      if (topicsArray.length > 0) {
+        console.log('First topic:', topicsArray[0]);
+      }
       
       // Check each topic for ID
       topicsArray.forEach((topic, i) => {
         if (!topic._id && !topic.id) {
-          console.error(`❌ Topic ${i} has no ID:`, topic);
+          console.error(`❌ Topic ${i} "${topic.name}" has no ID:`, topic);
         }
       });
       
       setTopics(topicsArray);
       setPopularTopics(popularArray);
     } catch (error) {
-      console.error('Failed to load topics:', error);
+      console.error('❌ Failed to load topics:', error);
+      console.error('Error details:', error.response?.data);
       toast.error('Failed to load topics');
       setTopics([]);
       setPopularTopics([]);
@@ -125,7 +173,7 @@ const TopicsPage = () => {
   };
 
   const handleStartLearning = (topicId) => {
-    navigate(`/topics/${topicId}`);
+    navigate(`/teach/${topicId}`);
   };
 
   if (loading) {
@@ -141,11 +189,11 @@ const TopicsPage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-DM Mono, monospace text-3xl font-semibold text-text-dark dark:text-foreground mb-2">
+          <h1 className="font-DM Mono, monospace text-4xl font-semibold text-text-dark dark:text-foreground mb-2">
             Explore <span className="text-green-700">Topics</span>
           </h1>
           <p className="text-text-medium dark:text-muted-foreground">
-            Find the perfect topic to teach and master
+            Find the <span className="text-green-700">perfect</span> topic to teach and master
           </p>
         </div>
 
@@ -165,8 +213,8 @@ const TopicsPage = () => {
         <div>
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-sand" />
-            <h2 className="font-serif text-2xl font-semibold text-text-dark dark:text-foreground">
-              Popular Topics
+            <h2 className="font-DM Mono, monospace text-2xl font-semibold text-text-dark dark:text-foreground">
+              <span className="text-green-700">Popular</span> Topics
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
@@ -288,7 +336,7 @@ const PopularTopicCard = ({ topic, onClick }) => {
               Popular
             </Badge>
           </div>
-          <h3 className="font-serif text-xl font-semibold text-text-dark dark:text-foreground mb-2">
+          <h3 className="font-DM Mono, monospace text-xl font-semibold text-text-dark dark:text-foreground mb-2">
             {topic.name}
           </h3>
           <p className="text-sm text-text-medium mb-4 line-clamp-2">

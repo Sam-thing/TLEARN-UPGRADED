@@ -16,12 +16,19 @@ export const createSession = catchAsync(async (req, res) => {
   const topic = await Topic.findById(topicId);
   if (!topic) throw new AppError('Topic not found', 404);
 
+  // Handle audio file
+  let audioUrl = '';
+  if (req.file) {
+    audioUrl = `/uploaded/${req.file.filename}`;
+  }
+
   // Create session first (status: pending)
   const session = await Session.create({
     user:  req.user._id,
     topic: topicId,
     transcript,
     duration: Number(duration) || 0,
+    audioUrl,
     analysis: {
       wordCount:   transcript.split(/\s+/).length,
       fillerWords: countFillerWords(transcript),

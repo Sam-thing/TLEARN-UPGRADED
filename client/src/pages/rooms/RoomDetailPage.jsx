@@ -105,22 +105,22 @@ const RoomsPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 pb-8">
+      {/* Header - Responsive */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-DM Mono, monospace text-4xl font-semibold text-text-dark dark:text-foreground mb-2">
+          <h1 className="text-3xl sm:text-4xl font-semibold text-text-dark dark:text-foreground mb-1 sm:mb-2" style={{ fontFamily: 'DM Mono, monospace' }}>
             Study <span className="text-green-700">Rooms</span>
           </h1>
-          <p className="text-text-medium dark:text-muted-foreground">
+          <p className="text-sm sm:text-base text-text-medium dark:text-muted-foreground">
             Join a room to learn with peers studying the same topics
           </p>
         </div>
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-forest to-forest-light">
-              <Plus className="w-5 h-5 mr-2" />
+            <Button className="w-full sm:w-auto bg-gradient-to-r from-forest to-forest-light text-sm sm:text-base">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Create Room
             </Button>
           </DialogTrigger>
@@ -128,20 +128,20 @@ const RoomsPage = () => {
         </Dialog>
       </div>
 
-      {/* Matched Rooms Highlight */}
+      {/* Matched Rooms Highlight - Responsive */}
       {matchedRooms.length > 0 && (
         <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-6">
             <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-purple-500" />
-              <CardTitle>Best Matches for You</CardTitle>
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+              <CardTitle className="text-lg sm:text-xl">Best Matches for You</CardTitle>
             </div>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               These rooms match your learning level and study patterns
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               {matchedRooms.slice(0, 2).map((room) => (
                 <RoomCard
                   key={room._id}
@@ -155,31 +155,32 @@ const RoomsPage = () => {
         </Card>
       )}
 
-      {/* Search & Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
+      {/* Search & Filters - Responsive */}
+      <div className="flex flex-col gap-3 sm:gap-4 md:flex-row">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-light" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-text-light" />
           <Input
             placeholder="Search rooms..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 sm:pl-10 text-sm sm:text-base"
           />
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2">
+        {/* Filter Tabs - Stack on mobile, horizontal on tablet+ */}
+        <div className="grid grid-cols-2 sm:flex gap-2">
           {['all', 'matched', 'public', 'private'].map((f) => (
             <Button
               key={f}
               variant={filter === f ? 'default' : 'outline'}
               onClick={() => setFilter(f)}
-              className={filter === f ? 'bg-forest' : ''}
+              className={`text-xs sm:text-sm ${filter === f ? 'bg-forest' : ''}`}
+              size="sm"
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
               {f === 'matched' && matchedRooms.length > 0 && (
-                <Badge className="ml-2" variant="secondary">
+                <Badge className="ml-1 sm:ml-2 text-xs" variant="secondary">
                   {matchedRooms.length}
                 </Badge>
               )}
@@ -188,9 +189,9 @@ const RoomsPage = () => {
         </div>
       </div>
 
-      {/* Rooms Grid */}
+      {/* Rooms Grid - Responsive: 1 col mobile, 2 cols tablet, 3 cols desktop */}
       {filteredRooms().length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredRooms().map((room) => (
             <RoomCard
               key={room._id}
@@ -202,13 +203,13 @@ const RoomsPage = () => {
         </div>
       ) : (
         <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="w-16 h-16 text-text-light mx-auto mb-4" />
-            <h3 className="font-semibold text-lg mb-2">No rooms found</h3>
-            <p className="text-text-medium mb-4">
+          <CardContent className="p-8 sm:p-12 text-center">
+            <Users className="w-12 h-12 sm:w-16 sm:h-16 text-text-light mx-auto mb-3 sm:mb-4" />
+            <h3 className="font-semibold text-base sm:text-lg mb-2">No rooms found</h3>
+            <p className="text-sm sm:text-base text-text-medium mb-4">
               Create a new room to get started
             </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
               Create Room
             </Button>
           </CardContent>
@@ -315,12 +316,40 @@ const CreateRoomDialog = ({ onSuccess, onClose }) => {
 
   const loadTopics = async () => {
     try {
+      console.log('🏠 RoomsPage: Loading topics for dropdown...');
       const data = await topicService.getAll();
-      // FIX: Always ensure topics is an array
-      setTopics(Array.isArray(data) ? data : []);
+      
+      console.log('Topics raw response:', data);
+      console.log('Topics type:', typeof data);
+      
+      // FIX: Extract topics using robust logic (same as Dashboard/TopicsPage)
+      let topicsArray = [];
+      if (Array.isArray(data)) {
+        topicsArray = data;
+        console.log('✅ Topics is direct array');
+      } else if (data?.topics && Array.isArray(data.topics)) {
+        topicsArray = data.topics;
+        console.log('✅ Topics found in .topics');
+      } else if (data?.data?.topics && Array.isArray(data.data.topics)) {
+        topicsArray = data.data.topics;
+        console.log('✅ Topics found in .data.topics');
+      } else if (data?.data && Array.isArray(data.data)) {
+        topicsArray = data.data;
+        console.log('✅ Topics found in .data');
+      } else {
+        console.warn('❌ Could not extract topics from:', data);
+      }
+      
+      console.log('📊 Topics loaded for dropdown:', topicsArray.length);
+      if (topicsArray.length > 0) {
+        console.log('First topic:', topicsArray[0]);
+      }
+      
+      setTopics(topicsArray);
     } catch (error) {
-      console.error('Failed to load topics:', error);
-      setTopics([]); // Set empty array on error
+      console.error('❌ Failed to load topics:', error);
+      console.error('Error details:', error.response?.data);
+      setTopics([]);
       toast.error('Failed to load topics');
     }
   };

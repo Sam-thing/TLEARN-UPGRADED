@@ -31,11 +31,11 @@ const RegisterPage = () => {
     }
 
     setLoading(true);
-    const result = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password
-    });
+    const result = await register(
+      formData.name,
+      formData.email,
+      formData.password
+    );
 
     if (result.success) {
       toast.success('Welcome to T.Learn!');

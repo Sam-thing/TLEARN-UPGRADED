@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { topicService } from '@/services/topicService';
 import { sessionService } from '@/services/sessionService';
-import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 
 const TeachPage = () => {
@@ -100,12 +100,15 @@ const TeachPage = () => {
 
       const response = await sessionService.create(formData);
       
+      // response structure: { session: {...} }
+      const sessionId = response.data?.session?._id || response.session?._id;
+      
       toast.success('Session completed! Getting your feedback...');
       setPhase('feedback');
       
       // Navigate to session detail after 2 seconds
       setTimeout(() => {
-        navigate(`/sessions/${response._id}`);
+        navigate(`/sessions/${sessionId}`);
       }, 2000);
     } catch (error) {
       toast.error('Failed to submit session');

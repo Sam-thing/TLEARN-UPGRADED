@@ -27,7 +27,11 @@ const roomSchema = new mongoose.Schema({
 
   isActive: { type: Boolean, default: true }
 }, {
-  timestamps: true
+  timestamps: true,
+    lastActivity: { 
+    type: Date,
+    default: Date.now
+  }
 });
 
 roomSchema.index({ topic: 1 });
