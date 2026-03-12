@@ -1,33 +1,43 @@
+// src/services/sessionService.js
 import api from './api';
 
 export const sessionService = {
-  async create(formData) {
-    return await api.post('/sessions', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+  // Get all sessions for current user
+  async getAll() {
+    return await api.get('/sessions');
   },
 
-  async getAll(filters = {}) {
-    return await api.get('/sessions', { params: filters });
-  },
-
+  // Get single session by ID
   async getById(id) {
     return await api.get(`/sessions/${id}`);
   },
 
-  async getRecent(limit = 5) {
-    return await api.get(`/sessions/recent?limit=${limit}`);
+  // Create new session
+  async create(formData) {
+    return await api.post('/sessions', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
   },
 
-  async getStats() {
-    return await api.get('/sessions/stats');
-  },
-
+  // Delete session
   async delete(id) {
     return await api.delete(`/sessions/${id}`);
   },
 
-  async retry(topicId) {
-    return await api.post(`/sessions/retry/${topicId}`);
+  // Get sessions by topic
+  async getByTopic(topicId) {
+    return await api.get(`/sessions/topic/${topicId}`);
   },
+
+  // Get recent sessions
+  async getRecent(limit = 10) {
+    return await api.get('/sessions/recent', { params: { limit } });
+  },
+
+  // Get user stats
+  async getStats() {
+    return await api.get('/sessions/stats');
+  }
 };

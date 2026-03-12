@@ -291,4 +291,126 @@ router.delete('/:messageId', protect, async (req, res) => {
   }
 });
 
+// Pin/Unpin message
+router.post('/:messageId/pin', protect, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Check if user is member of room
+    const room = await Room.findById(message.room);
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    const isMember = room.members.some(
+      member => member.user.toString() === req.user.id
+    );
+
+    if (!isMember) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Toggle pin
+    message.isPinned = !message.isPinned;
+    message.pinnedAt = message.isPinned ? new Date() : null;
+    message.pinnedBy = message.isPinned ? req.user.id : null;
+    await message.save();
+
+    // Emit via socket
+    const io = (await import('../socket/socket.js')).getIO();
+    io.to(message.room.toString()).emit('message-pinned', {
+      messageId: message._id,
+      isPinned: message.isPinned,
+      pinnedAt: message.pinnedAt
+    });
+
+    res.json({
+      messageId: message._id,
+      isPinned: message.isPinned,
+      pinnedAt: message.pinnedAt
+    });
+  } catch (error) {
+    console.error('Error pinning message:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get pinned messages for a room
+router.get('/room/:roomId/pinned', protect, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    // Check if user is member
+    const room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    const isMember = room.members.some(
+      member => member.user.toString() === req.user.id
+    );
+
+    if (!isMember) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Get pinned messages
+    const pinnedMessages = await Message.find({
+      room: roomId,
+      isPinned: true
+    })
+      .sort({ pinnedAt: -1 })
+      .populate('sender', 'name avatar')
+      .populate('pinnedBy', 'name')
+      .lean();
+
+    res.json({ pinnedMessages });
+  } catch (error) {
+    console.error('Error fetching pinned messages:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/room/:roomId/read', protect, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { messageIds } = req.body;
+
+    await Message.updateMany(
+      {
+        _id: { $in: messageIds },
+        room: roomId,
+        'readBy.user': { $ne: req.user.id }
+      },
+      {
+        $push: {
+          readBy: {
+            user: req.user.id,
+            userName: req.user.name,  // ← ADD THIS
+            readAt: new Date()
+          }
+        }
+      }
+    );
+
+    // Emit via socket
+    const io = (await import('../socket/socket.js')).getIO();
+    io.to(roomId).emit('messages-read', {
+      messageIds,
+      userId: req.user.id,
+      userName: req.user.name
+    });
+
+    res.json({ message: 'Messages marked as read' });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

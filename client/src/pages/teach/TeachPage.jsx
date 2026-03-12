@@ -22,6 +22,7 @@ import { topicService } from '@/services/topicService';
 import { sessionService } from '@/services/sessionService';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
+import axios from 'axios';
 
 const TeachPage = () => {
   const { topicId } = useParams();
@@ -38,7 +39,7 @@ const TeachPage = () => {
     startRecording, 
     stopRecording, 
     audioUrl 
-  } = useVoiceRecorder();
+  } = useAudioRecorder();
   
   const { 
     transcript, 
@@ -71,7 +72,21 @@ const TeachPage = () => {
     }
   };
 
-  const handleStartTeaching = () => {
+  const handleStartTeaching = async () => {
+    // Track session start
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `http://localhost:5000/api/topics/${topicId}/start-session`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log('✅ Session tracked');
+    } catch (error) {
+      console.error('Failed to track session:', error);
+    }
+
+    // Start teaching
     setPhase('teaching');
     setTimerActive(true);
     startRecording();
@@ -82,6 +97,36 @@ const TeachPage = () => {
     setTimerActive(false);
     stopRecording();
     stopListening();
+    // Move to feedback phase after stopping
+    setPhase('feedback');
+  };
+
+  const handleSaveDraft = async () => {
+    if (!transcript || transcript.trim().length === 0) {
+      toast.error('No content to save');
+      return;
+    }
+
+    try {
+      // Save to localStorage as draft
+      const draft = {
+        topicId,
+        topicName: topic?.name,
+        transcript,
+        duration: timer,
+        timestamp: Date.now()
+      };
+
+      const existingDrafts = JSON.parse(localStorage.getItem('teachingDrafts') || '[]');
+      existingDrafts.push(draft);
+      localStorage.setItem('teachingDrafts', JSON.stringify(existingDrafts));
+
+      toast.success('Draft saved! You can continue later.');
+      navigate('/topics');
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      toast.error('Failed to save draft');
+    }
   };
 
   const handleSubmit = async () => {
@@ -99,6 +144,19 @@ const TeachPage = () => {
       formData.append('duration', timer);
 
       const response = await sessionService.create(formData);
+      
+      // Track completion
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(
+          `http://localhost:5000/api/topics/${topicId}/complete`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log('✅ Completion tracked');
+      } catch (error) {
+        console.error('Failed to track completion:', error);
+      }
       
       // response structure: { session: {...} }
       const sessionId = response.data?.session?._id || response.session?._id;
@@ -172,6 +230,7 @@ const TeachPage = () => {
           transcript={transcript}
           timer={timer}
           onStop={handleStopTeaching}
+          onSaveDraft={handleSaveDraft}
         />
       )}
 
@@ -229,7 +288,7 @@ const PrepPhase = ({ topic, onStart }) => {
             className="bg-gradient-to-r from-forest to-forest-light"
           >
             <Mic className="w-5 h-5 mr-2" />
-            Start <span className="text-green-700">Teaching</span>
+            Start Teaching
           </Button>
         </div>
       </TabsContent>
@@ -271,7 +330,7 @@ const PrepPhase = ({ topic, onStart }) => {
 };
 
 // Teaching Phase Component
-const TeachingPhase = ({ isRecording, transcript, timer, onStop }) => {
+const TeachingPhase = ({ isRecording, transcript, timer, onStop, onSaveDraft }) => {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -287,7 +346,7 @@ const TeachingPhase = ({ isRecording, transcript, timer, onStop }) => {
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-24 h-24 rounded-full bg-gradient-to-br from-white-500 to-green-600 flex items-center justify-center"
+              className="w-24 h-24 rounded-full bg-gradient-to-br from-red-500 to-green-600 flex items-center justify-center"
             >
               <Mic className="w-12 h-12 text-white" />
             </motion.div>
@@ -313,10 +372,7 @@ const TeachingPhase = ({ isRecording, transcript, timer, onStop }) => {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => {
-                // Save draft logic here
-                toast.success('Teaching session saved as draft');
-              }}
+              onClick={onSaveDraft}
             >
               <BookOpen className="w-5 h-5 mr-2" />
               Save as Draft

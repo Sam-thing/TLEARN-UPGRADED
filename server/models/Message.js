@@ -33,11 +33,23 @@ const messageSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     },
+    userName: String,
     readAt: {
       type: Date,
       default: Date.now
     }
   }],
+
+  isPinned: {
+    type: Boolean,
+    default: false
+  },
+  pinnedAt: Date,
+  pinnedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+
   reactions: {
     type: Map,
     of: [String],

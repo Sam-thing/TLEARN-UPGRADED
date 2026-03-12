@@ -1,5 +1,5 @@
 // src/layouts/DashboardLayout.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -34,6 +34,7 @@ import {
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
@@ -47,8 +48,27 @@ const DashboardLayout = () => {
     { name: 'Progress', href: '/progress', icon: TrendingUp },
   ];
 
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      
+      // Auto-close sidebar when switching to desktop
+      if (!mobile) {
+        setSidebarOpen(false);
+      }
+    };
+    
+    // Initial check
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-cream dark:bg-background">
+    <div className="min-h-screen bg-[oklch(0.986_0.002_240)] dark:bg-[oklch(0.11_0.008_255)]">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -65,43 +85,39 @@ const DashboardLayout = () => {
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={window.innerWidth < 1024 ? { x: sidebarOpen ? 0 : '-100%' } : { x: 0 }}
-        className="fixed top-0 left-0 z-50 h-screen w-64 bg-paper dark:bg-card border-r border-border lg:translate-x-0 transition-transform"
+        animate={isMobile ? { x: sidebarOpen ? 0 : '-100%' } : { x: 0 }}
+        className="fixed top-0 left-0 z-50 h-screen w-64 bg-white dark:bg-[oklch(0.13_0.008_255)] border-r border-[oklch(0.91_0.004_240)] dark:border-[oklch(1_0_0/9%)] lg:translate-x-0 transition-transform"
       >
         {/* Logo */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-border">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/logo.png.png" 
-                alt="T.Learn Logo" 
-                className="w-8 h-8 rounded-lg p-0 shadow-sm justify-center items-center"
-              />
-              <span className="font-DM Mono, monospace text-2xl font-semibold text-forest dark:text-foreground">
-                T.Learn
-              </span>
+        <div className="h-16 flex items-center justify-between px-6 border-b border-[oklch(0.91_0.004_240)] dark:border-[oklch(1_0_0/9%)]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gradient-to-br from-[oklch(0.62_0.17_158)] to-[oklch(0.55_0.17_158)] rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>T</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 hover:bg-muted rounded-lg"
-              aria-label="Close sidebar"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <span className="font-bold text-lg text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>
+              T.Learn
+            </span>
           </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-6 space-y-1">
           {navigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl font-DM Mono, monospace, font-medium transition-all ${
+                `flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-all text-sm ${
                   isActive
-                    ? 'bg-gradient-to-r from-forest/10 to-forest-light/10 text-forest dark:from-primary/20 dark:to-primary/20 dark:text-primary'
-                    : 'text-text-medium hover:bg-muted hover:text-forest dark:hover:text-foreground'
+                    ? 'bg-[oklch(0.62_0.17_158/10%)] dark:bg-[oklch(0.62_0.17_158/15%)] text-[oklch(0.62_0.17_158)] dark:text-[oklch(0.68_0.17_158)]'
+                    : 'text-[oklch(0.36_0.010_255)] dark:text-[oklch(0.60_0.008_255)] hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] hover:text-[oklch(0.14_0.012_255)] dark:hover:text-[oklch(0.96_0.004_240)]'
                 }`
               }
             >
@@ -112,11 +128,11 @@ const DashboardLayout = () => {
         </nav>
 
         {/* Bottom Section */}
-        <div className="border-t border-border p-4">
+        <div className="border-t border-[oklch(0.91_0.004_240)] dark:border-[oklch(1_0_0/9%)] p-3">
           <NavLink
             to="/settings"
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-text-medium hover:bg-muted hover:text-forest dark:hover:text-foreground transition-all"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium text-sm text-[oklch(0.36_0.010_255)] dark:text-[oklch(0.60_0.008_255)] hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] hover:text-[oklch(0.14_0.012_255)] dark:hover:text-[oklch(0.96_0.004_240)] transition-all"
           >
             <Settings className="w-5 h-5" />
             Settings
@@ -125,26 +141,26 @@ const DashboardLayout = () => {
       </motion.aside>
 
       {/* Main Content */}
-      <div className="lg:ml-64 min-h-screen">
+      <div className="lg:ml-64">
         {/* Top Navigation */}
-        <header className="sticky top-0 z-30 h-16 bg-paper/80 dark:bg-card/80 backdrop-blur-xl border-b border-border">
-          <div className="h-full px-6 flex items-center justify-between">
+        <header className="sticky top-0 z-30 h-16 bg-white/90 dark:bg-[oklch(0.13_0.008_255/0.92)] backdrop-blur-xl border-b border-[oklch(0.91_0.004_240)] dark:border-[oklch(1_0_0/9%)]">
+          <div className="h-full px-6 flex items-center justify-between max-w-[1800px] mx-auto">
             {/* Left Section */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 hover:bg-muted rounded-lg"
+                className="lg:hidden p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               {/* Search Bar */}
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-muted rounded-xl w-80">
-                <Search className="w-4 h-4 text-text-light" />
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-[oklch(0.96_0.004_240)] dark:bg-[oklch(0.20_0.008_255)] rounded-lg w-80 border border-transparent focus-within:border-[oklch(0.62_0.17_158/40%)] transition-colors">
+                <Search className="w-4 h-4 text-[oklch(0.56_0.008_255)]" />
                 <input
                   type="text"
                   placeholder="Search topics, notes, rooms..."
-                  className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-text-light"
+                  className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-[oklch(0.72_0.005_255)]"
                 />
               </div>
             </div>
@@ -154,39 +170,39 @@ const DashboardLayout = () => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                className="p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors"
               >
                 {isDark ? (
-                  <Sun className="w-5 h-5 text-sand" />
+                  <Sun className="w-5 h-5 text-[oklch(0.80_0.17_72)]" />
                 ) : (
-                  <Moon className="w-5 h-5 text-text-medium" />
+                  <Moon className="w-5 h-5 text-[oklch(0.36_0.010_255)]" />
                 )}
               </button>
 
               {/* Notifications */}
-              <button className="relative p-2 hover:bg-muted rounded-lg">
-                <Bell className="w-5 h-5 text-text-medium" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              <button className="relative p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors">
+                <Bell className="w-5 h-5 text-[oklch(0.36_0.010_255)] dark:text-[oklch(0.60_0.008_255)]" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[oklch(0.60_0.22_25)] rounded-full" />
               </button>
 
               {/* User Menu */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-3 p-2 hover:bg-muted rounded-xl transition-colors">
-                  <Avatar className="w-8 h-8">
+                <DropdownMenuTrigger className="flex items-center gap-3 p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors">
+                  <Avatar className="w-8 h-8 border border-[oklch(0.91_0.004_240)] dark:border-[oklch(1_0_0/9%)]">
                     <AvatarImage src={user?.avatar} />
-                    <AvatarFallback className="bg-gradient-to-br from-forest to-forest-light text-white">
+                    <AvatarFallback className="bg-gradient-to-br from-[oklch(0.62_0.17_158)] to-[oklch(0.55_0.17_158)] text-white font-semibold">
                       {user?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-text-dark dark:text-foreground">
+                    <p className="text-sm font-medium text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]">
                       {user?.name || 'User'}
                     </p>
-                    <p className="text-xs text-text-light">
+                    <p className="text-xs text-[oklch(0.56_0.008_255)]">
                       {user?.email || 'user@email.com'}
                     </p>
                   </div>
-                  <ChevronDown className="hidden md:block w-4 h-4 text-text-light" />
+                  <ChevronDown className="hidden md:block w-4 h-4 text-[oklch(0.56_0.008_255)]" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -200,7 +216,7 @@ const DashboardLayout = () => {
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-destructive">
+                  <DropdownMenuItem onClick={logout} className="text-[oklch(0.60_0.22_25)]">
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
@@ -210,8 +226,8 @@ const DashboardLayout = () => {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="p-6">
+        {/* Page Content - Centered with max width */}
+        <main className="p-6 max-w-[1600px] mx-auto">
           <Outlet />
         </main>
       </div>

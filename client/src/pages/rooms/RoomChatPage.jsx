@@ -20,14 +20,19 @@ import { toast } from 'sonner';
 import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
+import ReadReceipts from '@/components/chat/ReadReceipts';
+import { getAvatarColor, getInitials } from '@/utils/avatarColors';
 import { Mic } from 'lucide-react';  
 import VoiceRecorder from '@/components/chat/VoiceRecorder';
 import AudioPlayer from '@/components/chat/AudioPlayer';
 import MessageReactions from '@/components/chat/MessageReactions';
 import MessageActions from '@/components/chat/MessageActions';
 import { Paperclip } from 'lucide-react';
+import { Search } from 'lucide-react';
+import PinnedMessages from '@/components/chat/PinnedMessages';
 import FileUploader from '@/components/chat/FileUploader';
 import FilePreview from '@/components/chat/FilePreview';
+import MessageSearch from '@/components/chat/MessageSearch';
 
 
 const RoomChatPage = () => {
@@ -47,6 +52,7 @@ const RoomChatPage = () => {
   const typingTimeoutRef = useRef(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [showFileUploader, setShowFileUploader] = useState(false);
 
   // Load room and messages on mount
@@ -54,6 +60,22 @@ const RoomChatPage = () => {
     loadRoom();
     loadMessages();
   }, [roomId]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+      if (e.key === 'Escape') {
+        setShowSearch(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Socket.io event listeners
   useEffect(() => {
@@ -146,6 +168,43 @@ const RoomChatPage = () => {
     setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
     });
 
+    // Listen for pins
+    socket.on('message-pinned', (data) => {
+      console.log('📌 Message pinned:', data);
+      setMessages(prev => prev.map(msg => 
+        msg._id === data.messageId 
+          ? { ...msg, isPinned: data.isPinned, pinnedAt: data.pinnedAt }
+          : msg
+      ));
+      
+      // Reload pinned messages in PinnedMessages component
+      window.dispatchEvent(new Event('reload-pinned'));
+    });
+
+// In cleanup:
+socket.off('message-pinned');
+
+    // Listen for read receipts
+    socket.on('messages-read', (data) => {
+    console.log('📖 Messages read:', data);
+    setMessages(prev => prev.map(msg => {
+      if (data.messageIds.includes(msg._id)) {
+        return {
+          ...msg,
+          readBy: [...(msg.readBy || []), {
+            user: data.userId,
+            userName: data.userName,
+            readAt: new Date()
+          }]
+        };
+      }
+      return msg;
+    }));
+  });
+
+  // In cleanup:
+  socket.off('messages-read');
+
     // Cleanup
     return () => {
       socket.emit('leave-room', roomId);
@@ -158,6 +217,28 @@ const RoomChatPage = () => {
     };
   }, [socket, roomId, user]);
 
+  useEffect(() => {
+    if (!socket || !messages.length) return;
+
+    // Mark visible messages as read
+    const unreadMessages = messages.filter(
+      msg => msg.userId !== user?.id && 
+      msg.type !== 'system' &&
+      (!msg.readBy || !msg.readBy.some(r => r.user === user?.id))
+    );
+
+    if (unreadMessages.length > 0) {
+      const messageIds = unreadMessages.map(m => m._id);
+      
+      // Mark as read in backend
+      const token = localStorage.getItem('token');
+      axios.post(
+        `http://localhost:5000/api/messages/room/${roomId}/read`,
+        { messageIds },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).catch(err => console.error('Failed to mark as read:', err));
+    }
+  }, [messages, user?.id, socket, roomId]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -179,7 +260,16 @@ const RoomChatPage = () => {
     }
   };
 
-
+  const handleNavigateToMessage = (messageId) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30');
+      setTimeout(() => {
+        element.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/30');
+      }, 2000);
+    }
+  };
 
   const loadMessages = async () => {
   try {
@@ -224,7 +314,7 @@ const RoomChatPage = () => {
     };
 
 
-    
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
@@ -254,6 +344,8 @@ const RoomChatPage = () => {
     // Stop typing indicator
     socket.emit('typing-stop', roomId);
   };
+
+  
 
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
@@ -392,6 +484,20 @@ const RoomChatPage = () => {
     );
   }
 
+  const handlePin = async (messageId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `http://localhost:5000/api/messages/${messageId}/pin`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      console.error('Failed to pin message:', error);
+      toast.error('Failed to pin message');
+    }
+  };
+
   const handleSendFile = async (file) => {
   try {
     const formData = new FormData();
@@ -455,6 +561,13 @@ const RoomChatPage = () => {
             <Button variant="ghost" size="icon">
               <Info className="w-5 h-5" />
             </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setShowSearch(true)}
+            >
+              <Search className="w-5 h-5" />
+            </Button>
             
             <Button variant="ghost" size="icon" onClick={handleLeaveRoom}>
               <LogOut className="w-5 h-5 text-red-500" />
@@ -463,9 +576,26 @@ const RoomChatPage = () => {
         </div>
       </div>
 
+      {/* Pinned Messages */}
+      <PinnedMessages 
+        roomId={roomId} 
+        onNavigate={handleNavigateToMessage}
+      />
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-background p-4">
+        <AnimatePresence>
+          {showSearch && (
+            <MessageSearch
+              messages={messages}
+              onNavigate={handleNavigateToMessage}
+              onClose={() => setShowSearch(false)}
+            />
+          )}
+        </AnimatePresence>
+
         <div className="max-w-4xl mx-auto space-y-4">
+
           <AnimatePresence>
             {messages.map((message, index) => {
               // Skip system messages for ownership check
@@ -501,11 +631,12 @@ const RoomChatPage = () => {
                     index === 0 ||
                     messages[index - 1].userId !== message.userId
                     }
-                    onEdit={handleEdit}       // ← ADD THESE
-                    onDelete={handleDelete}   // ← ADD
-                    onCopy={handleCopy}       // ← ADD
-                    onReact={handleReact}     // ← ADD
-                    currentUserId={user?.id}  // ← ADD
+                    onEdit={handleEdit}       
+                    onDelete={handleDelete}   
+                    onCopy={handleCopy}       
+                    onReact={handleReact}     
+                    onPin={handlePin}         
+                    currentUserId={user?.id}  
                 />
                 );
             })}
@@ -606,10 +737,14 @@ const MessageBubble = ({
     onEdit,      
     onDelete,    
     onCopy,      
-    onReact,     
+    onReact, 
+    onPin,    
     currentUserId 
     }) => {
-    // System messages (user joined/left)
+
+    const avatarColor = getAvatarColor(message.userId);
+    const initials = getInitials(message.userName || message.senderName);
+
     // System messages (user joined/left)
     if (message.type === 'system') {
     return (
@@ -680,11 +815,11 @@ const MessageBubble = ({
         >
         {/* Avatar */}
         {showAvatar && !isOwn && (
-            <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-forest text-white text-sm">
-                {message.senderName?.[0] || message.userName?.[0] || 'U'}
-            </AvatarFallback>
-            </Avatar>
+        <Avatar className="w-8 h-8 flex-shrink-0">
+          <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
+            {initials}
+          </AvatarFallback>
+        </Avatar>
         )}
         {!showAvatar && !isOwn && <div className="w-8" />}
 
@@ -718,6 +853,7 @@ const MessageBubble = ({
 
   return (
     <motion.div
+        id={`message-${message._id}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'} group`}
@@ -725,8 +861,8 @@ const MessageBubble = ({
         {/* Avatar */}
         {showAvatar && !isOwn && (
         <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-forest text-white text-sm">
-            {message.senderName?.[0] || message.userName?.[0] || 'U'}
+            <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
+            {initials?.[0] || message.userName?.[0] || 'U'}
             </AvatarFallback>
         </Avatar>
         )}
@@ -765,6 +901,7 @@ const MessageBubble = ({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onCopy={onCopy}
+                onPin={onPin}
             />
             </div>
         </div>
@@ -777,13 +914,26 @@ const MessageBubble = ({
             currentUserId={currentUserId}
             isOwn={isOwn}
         />
-        
-        <span className="text-xs text-text-light mt-1">
-            {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-            })}
-        </span>
+
+        {/* Timestamp with Read Receipts - REPLACE THE SPAN WITH THIS */}
+        {isOwn ? (
+            <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs text-text-light">
+                    {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
+                </span>
+                <ReadReceipts message={message} currentUserId={currentUserId} />
+            </div>
+        ) : (
+            <span className="text-xs text-text-light mt-1">
+                {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}
+            </span>
+        )}
         </div>
     </motion.div>
     );

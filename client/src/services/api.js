@@ -1,11 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 30000,
+  baseURL: 'http://localhost:5000/api',
 });
 
 // Request interceptor - Add auth token
@@ -25,8 +21,12 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect if not already on landing/login page
+      if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/'; // Changed from '/login' to '/'
+      }
     }
     return Promise.reject(error.response?.data || error);
   }

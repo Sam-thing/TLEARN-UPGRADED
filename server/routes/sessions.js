@@ -1,20 +1,17 @@
-// routes/sessions.js
-import { Router } from 'express';
+// server/routes/sessions.js - Session Routes
+import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import {
-  createSession, getSessions, getRecentSessions,
-  getSessionStats, getSession, deleteSession
-} from '../controllers/sessionsController.js';
 import { protect } from '../middleware/auth.js';
+import Session from '../models/Session.js';
+import Topic from '../models/Topic.js';
 
-const router = Router();
-router.use(protect);
+const router = express.Router();
 
 // Configure multer for audio uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploaded/'); // Make sure this directory exists
+    cb(null, 'uploaded/sessions');
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -22,23 +19,166 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('audio/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only audio files are allowed'), false);
-    }
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+
+// Get all sessions for current user
+router.get('/', protect, async (req, res) => {
+  try {
+    const sessions = await Session.find({ user: req.user.id })
+      .populate('topic', 'name subject difficulty')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.get ('/',        getSessions);
-router.post('/',        upload.single('audio'), createSession);
-router.get ('/recent',  getRecentSessions);
-router.get ('/stats',   getSessionStats);
-router.get ('/:id',     getSession);
-router.delete('/:id',   deleteSession);
+// Get single session by ID
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id)
+      .populate('topic', 'name subject difficulty description')
+      .lean();
+
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Check ownership
+    if (session.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    res.json(session);
+  } catch (error) {
+    console.error('Error fetching session:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Create new session
+router.post('/', protect, upload.single('audio'), async (req, res) => {
+  try {
+    const { topicId, transcript, duration } = req.body;
+
+    if (!topicId || !transcript) {
+      return res.status(400).json({ message: 'Topic and transcript required' });
+    }
+
+    // Verify topic exists
+    const topic = await Topic.findById(topicId);
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    // Calculate word analysis
+    const words = transcript.split(/\s+/).filter(w => w.length > 0);
+    const wordCount = words.length;
+    const fillerWords = words.filter(w => 
+      ['um', 'uh', 'like', 'you know', 'so', 'basically'].includes(w.toLowerCase())
+    ).length;
+    const wordsPerMin = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
+
+    // Create session
+    const session = await Session.create({
+      user: req.user.id,
+      topic: topicId,
+      transcript,
+      duration: parseInt(duration) || 0,
+      audioUrl: req.file ? `/uploaded/sessions/${req.file.filename}` : '',
+      analysis: {
+        wordCount,
+        fillerWords,
+        wordsPerMin
+      },
+      feedback: {
+        score: 0,
+        accuracyScore: 0,
+        clarityScore: 0,
+        confidenceScore: 0,
+        overall: 'AI feedback will be generated shortly...',
+        strengths: [],
+        improvements: [],
+        missingPoints: [],
+        quizQuestions: []
+      },
+      status: 'pending'
+    });
+
+    // TODO: Generate AI feedback here with Claude/OpenAI
+    // This is where you'd call your AI service
+
+    await session.populate('topic', 'name subject difficulty');
+
+    res.status(201).json({ session });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete session
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id);
+
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Check ownership
+    if (session.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    await session.deleteOne();
+
+    res.json({ message: 'Session deleted' });
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get sessions by topic
+router.get('/topic/:topicId', protect, async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      user: req.user.id,
+      topic: req.params.topicId
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Error fetching topic sessions:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get recent sessions
+router.get('/recent', protect, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+
+    const sessions = await Session.find({ user: req.user.id })
+      .populate('topic', 'name subject')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Error fetching recent sessions:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 export default router;
