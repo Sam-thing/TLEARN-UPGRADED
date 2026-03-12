@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+server/node_modules
+client/node_modules
+.vscode
+
+# environment variables
+.env
+.env.local
+
+# build outputs
+dist
+build
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# uploaded files
+server/uploaded/
+
+# OS junk
+.DS_Store
+Thumbs.db
