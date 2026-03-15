@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-export const useSocket = (url = 'http://localhost:5000') => {
+export const useSocket = (url = 'https://tlearn-upgraded.vercel.app') => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
 
