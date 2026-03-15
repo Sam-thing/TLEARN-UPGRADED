@@ -101,7 +101,7 @@ app.use(errorHandler);
 
 // ── Connect & Start ────────────────────────────────────
 mongoose
-  .connect(process.env.MONGODB_URI_upgraded || process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI_UPGRADED || process.env.MONGODB_URI)
   .then(() => {
     console.log('✅  MongoDB connected');
     const PORT = process.env.PORT || 5000;
