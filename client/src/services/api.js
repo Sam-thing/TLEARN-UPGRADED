@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://tlearn-upgraded.vercel.app/api',
 });
 
 // Request interceptor - Add auth token
