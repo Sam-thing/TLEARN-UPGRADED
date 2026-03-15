@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://tlearn-upgraded.vercel.app/api',
+  baseURL: 'https://tlearn-api.onrender.com/api',
 });
 
 // Request interceptor - Add auth token

@@ -233,7 +233,7 @@ socket.off('message-pinned');
       // Mark as read in backend
       const token = localStorage.getItem('token');
       axios.post(
-        `https://tlearn-upgraded.vercel.app/api/messages/room/${roomId}/read`,
+        `http://localhost:5000/api/messages/room/${roomId}/read`,
         { messageIds },
         { headers: { Authorization: `Bearer ${token}` } }
       ).catch(err => console.error('Failed to mark as read:', err));
@@ -248,7 +248,7 @@ socket.off('message-pinned');
   const loadRoom = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`https://tlearn-upgraded.vercel.app/api/rooms/${roomId}`, {
+      const response = await axios.get(`http://localhost:5000/api/rooms/${roomId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRoom(response.data);
@@ -274,7 +274,7 @@ socket.off('message-pinned');
   const loadMessages = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`https://tlearn-upgraded.vercel.app/api/messages/room/${roomId}`, {
+    const response = await axios.get(`http://localhost:5000/api/messages/room/${roomId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -333,7 +333,7 @@ socket.off('message-pinned');
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `https://tlearn-upgraded.vercel.app/api/messages/room/${roomId}`,
+        `http://localhost:5000/api/messages/room/${roomId}`,
         { content: messageContent },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -375,7 +375,7 @@ socket.off('message-pinned');
 
         const token = localStorage.getItem('token');
         await axios.post(
-        `https://tlearn-upgraded.vercel.app/api/audio/room/${roomId}`,
+        `http://localhost:5000/api/audio/room/${roomId}`,
         formData,
         {
             headers: {
@@ -397,7 +397,7 @@ socket.off('message-pinned');
     try {
         const token = localStorage.getItem('token');
         await axios.post(
-        `https://tlearn-upgraded.vercel.app/api/messages/${messageId}/react`,
+        `http://localhost:5000/api/messages/${messageId}/react`,
         { emoji },
         { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -420,7 +420,7 @@ socket.off('message-pinned');
     try {
         const token = localStorage.getItem('token');
         await axios.patch(
-        `https://tlearn-upgraded.vercel.app/api/messages/${editingMessage._id}`,
+        `http://localhost:5000/api/messages/${editingMessage._id}`,
         { content: editText.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -445,7 +445,7 @@ socket.off('message-pinned');
     try {
         const token = localStorage.getItem('token');
         await axios.delete(
-        `https://tlearn-upgraded.vercel.app/api/messages/${messageId}`,
+        `http://localhost:5000/api/messages/${messageId}`,
         { headers: { Authorization: `Bearer ${token}` } }
         );
         
@@ -465,7 +465,7 @@ socket.off('message-pinned');
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `https://tlearn-upgraded.vercel.app/api/rooms/${roomId}/leave`,
+        `http://localhost:5000/api/rooms/${roomId}/leave`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -488,7 +488,7 @@ socket.off('message-pinned');
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `https://tlearn-upgraded.vercel.app/api/messages/${messageId}/pin`,
+        `http://localhost:5000/api/messages/${messageId}/pin`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -505,7 +505,7 @@ socket.off('message-pinned');
 
     const token = localStorage.getItem('token');
     await axios.post(
-      `https://tlearn-upgraded.vercel.app/api/files/room/${roomId}`,
+      `http://localhost:5000/api/files/room/${roomId}`,
       formData,
       {
         headers: {

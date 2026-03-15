@@ -18,7 +18,7 @@ const PinnedMessages = ({ roomId, onNavigate }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `https://tlearn-upgraded.vercel.app/api/messages/room/${roomId}/pinned`,
+        `http://localhost:5000/api/messages/room/${roomId}/pinned`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setPinnedMessages(response.data.pinnedMessages || []);

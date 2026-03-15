@@ -77,7 +77,7 @@ const TeachPage = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `https://tlearn-upgraded.vercel.app/api/topics/${topicId}/start-session`,
+        `http://localhost:5000/api/topics/${topicId}/start-session`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -149,7 +149,7 @@ const TeachPage = () => {
       try {
         const token = localStorage.getItem('token');
         await axios.post(
-          `https://tlearn-upgraded.vercel.app/api/topics/${topicId}/complete`,
+          `http://localhost:5000/api/topics/${topicId}/complete`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
