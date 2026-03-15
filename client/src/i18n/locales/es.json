@@ -1,0 +1,137 @@
+{
+  "app": {
+    "name": "T.Learn",
+    "tagline": "Aprende Enseñando"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "topics": "Temas",
+    "studyRooms": "Salas de Estudio",
+    "notes": "Notas",
+    "sessions": "Sesiones",
+    "progress": "Progreso",
+    "settings": "Configuración",
+    "profile": "Perfil",
+    "logout": "Cerrar Sesión"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido de nuevo",
+    "readyToLearn": "¿Listo para mejorar tu comprensión?",
+    "quickActions": "Acciones Rápidas",
+    "recentSessions": "Sesiones Recientes",
+    "recommendedTopics": "Temas Recomendados",
+    "activityHeatmap": "Mapa de Actividad",
+    "stats": {
+      "sessions": "Sesiones",
+      "avgScore": "Puntaje Promedio",
+      "streak": "Racha",
+      "achievements": "Logros",
+      "dontBreak": "¡No la rompas!",
+      "unlocked": "Desbloqueados"
+    }
+  },
+  "topics": {
+    "explore": "Explorar Temas",
+    "findPerfect": "Encuentra el tema perfecto para enseñar y dominar",
+    "createTopic": "Crear Tema",
+    "popularTopics": "Temas Populares",
+    "searchTopics": "Buscar temas...",
+    "allSubjects": "Todas las Materias",
+    "allLevels": "Todos los Niveles",
+    "startLearning": "Comenzar a Aprender",
+    "noTopics": "No se encontraron temas",
+    "createNew": "Crear un nuevo tema"
+  },
+  "sessions": {
+    "title": "Sesiones de Enseñanza",
+    "reviewProgress": "Revisa tu progreso y mejora tu enseñanza",
+    "totalSessions": "Sesiones Totales",
+    "avgScore": "Puntaje Promedio",
+    "totalTime": "Tiempo Total",
+    "thisWeek": "Esta Semana",
+    "searchSessions": "Buscar sesiones...",
+    "filterByScore": "Filtrar por puntaje",
+    "allSessions": "Todas las Sesiones",
+    "highScore": "Puntaje Alto (80%+)",
+    "mediumScore": "Puntaje Medio (50-79%)",
+    "needsImprovement": "Necesita Mejora (<50%)",
+    "noSessions": "No se encontraron sesiones",
+    "startTeaching": "Comienza a enseñar para ver tus sesiones aquí",
+    "viewDetails": "Ver Detalles",
+    "delete": "Eliminar"
+  },
+  "progress": {
+    "title": "Tu Progreso de Aprendizaje",
+    "trackJourney": "Rastrea tu viaje y celebra tus logros",
+    "exportData": "Exportar Datos",
+    "overview": "Resumen",
+    "analytics": "Analíticas",
+    "goalsAchievements": "Metas y Logros",
+    "quickStats": "Estadísticas Rápidas",
+    "recentSessions": "Sesiones Recientes",
+    "activityHeatmap": "Mapa de Actividad",
+    "performanceAnalysis": "Análisis de Rendimiento",
+    "scoreEvolution": "Evolución del Puntaje",
+    "dailyActivity": "Actividad Diaria",
+    "topicMastery": "Dominio de Temas",
+    "achievements": "Logros",
+    "learningGoals": "Metas de Aprendizaje",
+    "addCustomGoal": "Agregar Meta Personalizada"
+  },
+  "teach": {
+    "startTeaching": "Comenzar a Enseñar",
+    "stopTeaching": "Detener Enseñanza",
+    "saveAsDraft": "Guardar como Borrador",
+    "submitFeedback": "Enviar para Retroalimentación",
+    "prepNotes": "Notas de Preparación",
+    "teachingTips": "Consejos de Enseñanza",
+    "keyPoints": "Puntos Clave a Cubrir",
+    "liveTranscript": "Transcripción en Vivo",
+    "reviewTeaching": "Revisa tu Enseñanza",
+    "audioRecording": "Grabación de Audio",
+    "yourExplanation": "Tu Explicación",
+    "duration": "Duración",
+    "words": "Palabras"
+  },
+  "common": {
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "viewAll": "Ver Todo",
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "submit": "Enviar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "done": "Listo",
+    "yes": "Sí",
+    "no": "No",
+    "confirm": "Confirmar"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "dontHaveAccount": "¿No tienes cuenta?",
+    "alreadyHaveAccount": "¿Ya tienes cuenta?"
+  },
+  "errors": {
+    "loadFailed": "Error al cargar",
+    "saveFailed": "Error al guardar",
+    "deleteFailed": "Error al eliminar",
+    "serverError": "Error del servidor",
+    "tryAgain": "Por favor, inténtalo de nuevo"
+  },
+  "success": {
+    "saved": "¡Guardado exitosamente!",
+    "deleted": "¡Eliminado exitosamente!",
+    "created": "¡Creado exitosamente!",
+    "updated": "¡Actualizado exitosamente!"
+  }
+}

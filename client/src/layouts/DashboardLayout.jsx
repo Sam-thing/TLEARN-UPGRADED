@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {
   LayoutDashboard,
   BookOpen,
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const DashboardLayout = () => {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const { user, logout } = useAuth();
@@ -40,12 +43,12 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Topics', href: '/topics', icon: BookOpen },
-    { name: 'Study Rooms', href: '/rooms', icon: Users },
-    { name: 'Notes', href: '/notes', icon: FileText },
-    { name: 'Sessions', href: '/sessions', icon: Mic },
-    { name: 'Progress', href: '/progress', icon: TrendingUp },
+    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.topics'), href: '/topics', icon: BookOpen },
+    { name: t('nav.studyRooms'), href: '/rooms', icon: Users },
+    { name: t('nav.notes'), href: '/notes', icon: FileText },
+    { name: t('nav.sessions'), href: '/sessions', icon: Mic },
+    { name: t('nav.progress'), href: '/progress', icon: TrendingUp },
   ];
 
   // Handle responsive behavior
@@ -135,7 +138,7 @@ const DashboardLayout = () => {
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium text-sm text-[oklch(0.36_0.010_255)] dark:text-[oklch(0.60_0.008_255)] hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] hover:text-[oklch(0.14_0.012_255)] dark:hover:text-[oklch(0.96_0.004_240)] transition-all"
           >
             <Settings className="w-5 h-5" />
-            Settings
+            {t('nav.settings')}
           </NavLink>
         </div>
       </motion.aside>
@@ -178,6 +181,9 @@ const DashboardLayout = () => {
                   <Moon className="w-5 h-5 text-[oklch(0.36_0.010_255)]" />
                 )}
               </button>
+
+              {/* ADD LANGUAGE SWITCHER HERE! */}
+                <LanguageSwitcher />
 
               {/* Notifications */}
               <button className="relative p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors">

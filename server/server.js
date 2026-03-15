@@ -11,7 +11,9 @@ import dns from 'dns';
 import fs from 'fs';        
 import { initializeSocket } from './socket/socket.js'; 
 import messageRoutes from './routes/messages.js'; 
+import notificationRoutes from './routes/notifications.js';
 import audioMessageRoutes from './routes/audioMessages.js';
+import settingsRoutes from './routes/settings.js';
 import fileMessageRoutes from './routes/fileMessages.js';
 
 import authRoutes     from './routes/auth.js';
@@ -85,6 +87,8 @@ app.use('/api/users',    userRoutes);
 app.use('/api/messages', messageRoutes); 
 app.use('/api/audio', audioMessageRoutes);
 app.use('/api/files', fileMessageRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ── Health ─────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

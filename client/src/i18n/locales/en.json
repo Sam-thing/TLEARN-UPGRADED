@@ -1,0 +1,137 @@
+{
+  "app": {
+    "name": "T.Learn",
+    "tagline": "Learn by Teaching"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "topics": "Topics",
+    "studyRooms": "Study Rooms",
+    "notes": "Notes",
+    "sessions": "Sessions",
+    "progress": "Progress",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "readyToLearn": "Ready to level up your understanding?",
+    "quickActions": "Quick Actions",
+    "recentSessions": "Recent Sessions",
+    "recommendedTopics": "Recommended Topics",
+    "activityHeatmap": "Activity Heatmap",
+    "stats": {
+      "sessions": "Sessions",
+      "avgScore": "Avg Score",
+      "streak": "Streak",
+      "achievements": "Achievements",
+      "dontBreak": "Don't break it",
+      "unlocked": "Unlocked"
+    }
+  },
+  "topics": {
+    "explore": "Explore Topics",
+    "findPerfect": "Find the perfect topic to teach and master",
+    "createTopic": "Create Topic",
+    "popularTopics": "Popular Topics",
+    "searchTopics": "Search topics...",
+    "allSubjects": "All Subjects",
+    "allLevels": "All Levels",
+    "startLearning": "Start Learning",
+    "noTopics": "No topics found",
+    "createNew": "Create a new topic"
+  },
+  "sessions": {
+    "title": "Teaching Sessions",
+    "reviewProgress": "Review your progress and improve your teaching",
+    "totalSessions": "Total Sessions",
+    "avgScore": "Avg Score",
+    "totalTime": "Total Time",
+    "thisWeek": "This Week",
+    "searchSessions": "Search sessions...",
+    "filterByScore": "Filter by score",
+    "allSessions": "All Sessions",
+    "highScore": "High Score (80%+)",
+    "mediumScore": "Medium Score (50-79%)",
+    "needsImprovement": "Needs Improvement (<50%)",
+    "noSessions": "No sessions found",
+    "startTeaching": "Start teaching to see your sessions here",
+    "viewDetails": "View Details",
+    "delete": "Delete"
+  },
+  "progress": {
+    "title": "Your Learning Progress",
+    "trackJourney": "Track your journey and celebrate your achievements",
+    "exportData": "Export Data",
+    "overview": "Overview",
+    "analytics": "Analytics",
+    "goalsAchievements": "Goals & Achievements",
+    "quickStats": "Quick Stats",
+    "recentSessions": "Recent Sessions",
+    "activityHeatmap": "Activity Heatmap",
+    "performanceAnalysis": "Performance Analysis",
+    "scoreEvolution": "Score Evolution",
+    "dailyActivity": "Daily Activity",
+    "topicMastery": "Topic Mastery",
+    "achievements": "Achievements",
+    "learningGoals": "Learning Goals",
+    "addCustomGoal": "Add Custom Goal"
+  },
+  "teach": {
+    "startTeaching": "Start Teaching",
+    "stopTeaching": "Stop Teaching",
+    "saveAsDraft": "Save as Draft",
+    "submitFeedback": "Submit for Feedback",
+    "prepNotes": "Prep Notes",
+    "teachingTips": "Teaching Tips",
+    "keyPoints": "Key Points to Cover",
+    "liveTranscript": "Live Transcript",
+    "reviewTeaching": "Review Your Teaching",
+    "audioRecording": "Audio Recording",
+    "yourExplanation": "Your Explanation",
+    "duration": "Duration",
+    "words": "Words"
+  },
+  "common": {
+    "search": "Search",
+    "filter": "Filter",
+    "viewAll": "View All",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "forgotPassword": "Forgot Password?",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "errors": {
+    "loadFailed": "Failed to load",
+    "saveFailed": "Failed to save",
+    "deleteFailed": "Failed to delete",
+    "serverError": "Server error",
+    "tryAgain": "Please try again"
+  },
+  "success": {
+    "saved": "Saved successfully!",
+    "deleted": "Deleted successfully!",
+    "created": "Created successfully!",
+    "updated": "Updated successfully!"
+  }
+}

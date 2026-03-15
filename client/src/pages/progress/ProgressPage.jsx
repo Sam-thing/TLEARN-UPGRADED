@@ -1,16 +1,17 @@
 // src/pages/progress/ProgressPage.jsx
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Download, Calendar, Target } from 'lucide-react';
+import { TrendingUp, Download, Brain, Target, Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { progressService } from '@/services/progressService';
 
-// Import your enhanced ProgressReport component
-// Note: Place your ProgressReport.jsx file in src/components/progress/
-import ProgressReport from '@/components/progress/ProgressReport';
+// Import tab components
+import OverviewTab from '@/components/progress/OverviewTab';
+import AnalyticsTab from '@/components/progress/AnalyticsTab';
+import GoalsTab from '@/components/progress/GoalsTab';
 
 const ProgressPage = () => {
   const [progressData, setProgressData] = useState(null);
@@ -23,8 +24,14 @@ const ProgressPage = () => {
   const loadProgressData = async () => {
     try {
       const data = await progressService.getProgress();
-      setProgressData(data);
+      
+      // Extract data properly
+      const progressResult = data?.data || data;
+      console.log('📊 Progress data loaded:', progressResult);
+      
+      setProgressData(progressResult);
     } catch (error) {
+      console.error('Failed to load progress:', error);
       toast.error('Failed to load progress data');
     } finally {
       setLoading(false);
@@ -60,8 +67,8 @@ const ProgressPage = () => {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="DM Mono, monospace text-4xl font-semibold text-text-dark dark:text-foreground mb-1">
-            Your <span className="text-green-700">Learning Progress</span>
+          <h1 className="text-4xl font-bold text-text-dark dark:text-foreground mb-2">
+            Your Learning <span className="text-green-700">Progress</span>
           </h1>
           <p className="text-text-medium dark:text-muted-foreground">
             Track your journey and celebrate your achievements
@@ -74,98 +81,39 @@ const ProgressPage = () => {
         </Button>
       </motion.div>
 
-      {/* Quick Stats Overview */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <QuickStatCard
-          icon={TrendingUp}
-          label="Total Sessions"
-          value={progressData?.statistics?.totalSessions || 0}
-          color="from-green-600 to-white-400"
-        />
-        <QuickStatCard
-          icon={Target}
-          label="Average Score"
-          value={`${progressData?.statistics?.averageScore || 0}%`}
-          color="from-green-600 to-white-400"
-        />
-        <QuickStatCard
-          icon={Calendar}
-          label="Topics Explored"
-          value={progressData?.statistics?.topicsExplored || 0}
-          color="from-green-600 to-white-400"
-        />
-        <QuickStatCard
-          icon={TrendingUp}
-          label="Current Streak"
-          value={`${progressData?.streak?.current || 0} days`}
-          color="from-green-600 to-white-400"
-        />
-      </div>
-
-      {/* Main Progress Report */}
+      {/* Main Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="goals">Goals & Achievements</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            <span className="hidden sm:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            <span className="hidden sm:inline">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="goals" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            <span className="hidden sm:inline">Goals & Achievements</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6 mt-6">
-          {/* Use your enhanced ProgressReport component here */}
-          <ProgressReport progress={progressData} />
+        {/* OVERVIEW TAB - Quick stats, recent sessions, heatmap, quick achievements */}
+        <TabsContent value="overview" className="space-y-6">
+          <OverviewTab progress={progressData} />
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Detailed <span className="text-green-700">Analytics</span> </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-text-medium mb-4">
-                Deep dive into your <span className="text-green-700">learning patterns</span> and performance metrics
-              </p>
-              {/* Your ProgressReport component already has analytics! */}
-              <ProgressReport progress={progressData} />
-            </CardContent>
-          </Card>
+        {/* ANALYTICS TAB - Deep dive charts, insights, topic mastery */}
+        <TabsContent value="analytics" className="space-y-6">
+          <AnalyticsTab progress={progressData} />
         </TabsContent>
 
-        <TabsContent value="goals" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle> <span className="text-green-700">Goals</span> & Achievements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Your ProgressReport component has achievements and goals! */}
-              <ProgressReport progress={progressData} />
-            </CardContent>
-          </Card>
+        {/* GOALS TAB - Full achievements list, learning goals, challenges */}
+        <TabsContent value="goals" className="space-y-6">
+          <GoalsTab progress={progressData} />
         </TabsContent>
       </Tabs>
     </div>
-  );
-};
-
-// Quick Stat Card Component
-const QuickStatCard = ({ icon: Icon, label, value, color }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: 1.02 }}
-    >
-      <Card>
-        <CardContent className="p-6">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-4`}>
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          <div className="DM Mono, monospace text-3xl font-bold text-text-dark dark:text-foreground mb-1">
-            {value}
-          </div>
-          <div className="text-sm text-text-medium">{label}</div>
-        </CardContent>
-      </Card>
-    </motion.div>
   );
 };
 

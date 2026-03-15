@@ -32,6 +32,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // Protected Route Component
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+
 function App() {
   return (
     <ThemeProvider>

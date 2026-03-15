@@ -1,5 +1,6 @@
 // src/pages/settings/SettingsPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   Settings,
@@ -32,6 +33,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useTheme } from '@/contexts/ThemeContext';
 import { authService } from '@/services/authService';
+import { settingsService } from '@/services/settingsService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SettingsPage = () => {
   const { theme, toggleTheme } = useTheme();
@@ -73,28 +77,119 @@ const SettingsPage = () => {
 
     setLoading(true);
     try {
-      await authService.changePassword(passwordData.oldPassword, passwordData.newPassword);
+      await settingsService.changePassword(passwordData.oldPassword, passwordData.newPassword);
       toast.success('Password changed successfully!');
       setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
-      toast.error('Failed to change password');
+      toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportData = () => {
-    // Export user data
-    toast.success('Preparing your data export...');
-    // Implement actual export logic
-  };
-
-  const handleDeleteAccount = () => {
-    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      toast.error('Account deletion coming soon');
-      // Implement actual delete logic
+  const handleExportData = async () => {
+    try {
+      toast.loading('Preparing your data...');
+      const data = await settingsService.exportData();
+      
+      // Create download
+      const dataStr = JSON.stringify(data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tlearn-data-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast.dismiss();
+      toast.success('Data exported successfully!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to export data');
     }
   };
+
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleDeleteAccount = async () => {
+    const password = prompt('Enter your password to confirm account deletion:');
+    
+    if (!password) return;
+    
+    if (!confirm('Are you ABSOLUTELY sure? This cannot be undone!')) return;
+    
+    try {
+      await settingsService.deleteAccount(password);
+      toast.success('Account deleted. Goodbye!');
+      logout();
+      navigate('/login');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete account');
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const { i18n } = useTranslation();
+  const [language, setLanguage] = useState(i18n.language || 'en');
+
+  const handleLanguageChange = async (newLang) => {
+    setLanguage(newLang);
+    i18n.changeLanguage(newLang);
+    await settingsService.updateSettings({ language: newLang });
+    toast.success('Language updated!');
+  };
+
+  const loadSettings = async () => {
+    try {
+      const settings = await settingsService.getSettings();
+      setNotifications(settings.notifications || notifications);
+      setPrivacy(settings.privacy || privacy);
+
+      if (settings.language) {
+        setLanguage(settings.language);
+        i18n.changeLanguage(settings.language);
+      }
+
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  // Auto-save notifications when changed
+  useEffect(() => {
+    const saveNotifications = async () => {
+      try {
+        await settingsService.updateSettings({ notifications });
+        toast.success('Notification settings saved');
+      } catch (error) {
+        console.error('Failed to save notifications');
+      }
+    };
+    
+    // Debounce to avoid too many saves
+    const timer = setTimeout(saveNotifications, 1000);
+    return () => clearTimeout(timer);
+  }, [notifications]);
+
+  // Auto-save privacy when changed
+  useEffect(() => {
+    const savePrivacy = async () => {
+      try {
+        await settingsService.updateSettings({ privacy });
+        toast.success('Privacy settings saved');
+      } catch (error) {
+        console.error('Failed to save privacy');
+      }
+    };
+    
+    const timer = setTimeout(savePrivacy, 1000);
+    return () => clearTimeout(timer);
+  }, [privacy]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -170,13 +265,15 @@ const SettingsPage = () => {
                     Select your preferred language
                   </p>
                 </div>
-                <Select defaultValue="en">
+                <Select value={language} onValueChange={handleLanguageChange}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="sw">Swahili</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                    <SelectItem value="fr">Français</SelectItem>
+                    <SelectItem value="sw">Kiswahili</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -266,7 +363,7 @@ const SettingsPage = () => {
                     id="newPassword"
                     type={showNewPassword ? 'text' : 'password'}
                     value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({ ...formData, newPassword: e.target.value })}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                   />
                   <button
                     type="button"

@@ -1,6 +1,7 @@
 // src/pages/topics/TopicsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -54,6 +55,7 @@ const DIFFICULTY_LEVELS = ['All Levels', 'Beginner', 'Intermediate', 'Advanced']
 
 const TopicsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [topics, setTopics] = useState([]);
   const [filteredTopics, setFilteredTopics] = useState([]);
   const [popularTopics, setPopularTopics] = useState([]);
@@ -72,6 +74,7 @@ const TopicsPage = () => {
   }, [searchQuery, selectedSubject, selectedDifficulty, topics]);
 
   const loadTopics = async () => {
+    const { t } = useTranslation();
     try {
       console.log('🔍 TopicsPage: Fetching topics...');
       
@@ -152,6 +155,7 @@ const TopicsPage = () => {
   };
 
   const filterTopics = () => {
+    const { t } = useTranslation();
     let filtered = [...topics];
 
     if (searchQuery) {
@@ -173,6 +177,7 @@ const TopicsPage = () => {
   };
 
   const handleStartLearning = (topicId) => {
+    const { t } = useTranslation();
     navigate(`/teach/${topicId}`);
   };
 

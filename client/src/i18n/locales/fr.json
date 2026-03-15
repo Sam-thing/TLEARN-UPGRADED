@@ -1,0 +1,137 @@
+{
+  "app": {
+    "name": "T.Learn",
+    "tagline": "Apprendre en Enseignant"
+  },
+  "nav": {
+    "dashboard": "Tableau de Bord",
+    "topics": "Sujets",
+    "studyRooms": "Salles d'Étude",
+    "notes": "Notes",
+    "sessions": "Sessions",
+    "progress": "Progrès",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion"
+  },
+  "dashboard": {
+    "welcome": "Bon retour",
+    "readyToLearn": "Prêt à améliorer votre compréhension?",
+    "quickActions": "Actions Rapides",
+    "recentSessions": "Sessions Récentes",
+    "recommendedTopics": "Sujets Recommandés",
+    "activityHeatmap": "Carte d'Activité",
+    "stats": {
+      "sessions": "Sessions",
+      "avgScore": "Score Moyen",
+      "streak": "Série",
+      "achievements": "Réalisations",
+      "dontBreak": "Ne cassez pas!",
+      "unlocked": "Débloquées"
+    }
+  },
+  "topics": {
+    "explore": "Explorer les Sujets",
+    "findPerfect": "Trouvez le sujet parfait à enseigner et maîtriser",
+    "createTopic": "Créer un Sujet",
+    "popularTopics": "Sujets Populaires",
+    "searchTopics": "Rechercher des sujets...",
+    "allSubjects": "Toutes les Matières",
+    "allLevels": "Tous les Niveaux",
+    "startLearning": "Commencer l'Apprentissage",
+    "noTopics": "Aucun sujet trouvé",
+    "createNew": "Créer un nouveau sujet"
+  },
+  "sessions": {
+    "title": "Sessions d'Enseignement",
+    "reviewProgress": "Examinez vos progrès et améliorez votre enseignement",
+    "totalSessions": "Sessions Totales",
+    "avgScore": "Score Moyen",
+    "totalTime": "Temps Total",
+    "thisWeek": "Cette Semaine",
+    "searchSessions": "Rechercher des sessions...",
+    "filterByScore": "Filtrer par score",
+    "allSessions": "Toutes les Sessions",
+    "highScore": "Score Élevé (80%+)",
+    "mediumScore": "Score Moyen (50-79%)",
+    "needsImprovement": "Nécessite Amélioration (<50%)",
+    "noSessions": "Aucune session trouvée",
+    "startTeaching": "Commencez à enseigner pour voir vos sessions ici",
+    "viewDetails": "Voir les Détails",
+    "delete": "Supprimer"
+  },
+  "progress": {
+    "title": "Votre Progrès d'Apprentissage",
+    "trackJourney": "Suivez votre parcours et célébrez vos réalisations",
+    "exportData": "Exporter les Données",
+    "overview": "Aperçu",
+    "analytics": "Analytique",
+    "goalsAchievements": "Objectifs et Réalisations",
+    "quickStats": "Statistiques Rapides",
+    "recentSessions": "Sessions Récentes",
+    "activityHeatmap": "Carte d'Activité",
+    "performanceAnalysis": "Analyse de Performance",
+    "scoreEvolution": "Évolution du Score",
+    "dailyActivity": "Activité Quotidienne",
+    "topicMastery": "Maîtrise des Sujets",
+    "achievements": "Réalisations",
+    "learningGoals": "Objectifs d'Apprentissage",
+    "addCustomGoal": "Ajouter un Objectif Personnalisé"
+  },
+  "teach": {
+    "startTeaching": "Commencer l'Enseignement",
+    "stopTeaching": "Arrêter l'Enseignement",
+    "saveAsDraft": "Enregistrer comme Brouillon",
+    "submitFeedback": "Soumettre pour Commentaires",
+    "prepNotes": "Notes de Préparation",
+    "teachingTips": "Conseils d'Enseignement",
+    "keyPoints": "Points Clés à Couvrir",
+    "liveTranscript": "Transcription en Direct",
+    "reviewTeaching": "Examiner Votre Enseignement",
+    "audioRecording": "Enregistrement Audio",
+    "yourExplanation": "Votre Explication",
+    "duration": "Durée",
+    "words": "Mots"
+  },
+  "common": {
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "viewAll": "Tout Voir",
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "submit": "Soumettre",
+    "back": "Retour",
+    "next": "Suivant",
+    "done": "Terminé",
+    "yes": "Oui",
+    "no": "Non",
+    "confirm": "Confirmer"
+  },
+  "auth": {
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de Passe",
+    "name": "Nom",
+    "forgotPassword": "Mot de passe oublié?",
+    "dontHaveAccount": "Vous n'avez pas de compte?",
+    "alreadyHaveAccount": "Vous avez déjà un compte?"
+  },
+  "errors": {
+    "loadFailed": "Échec du chargement",
+    "saveFailed": "Échec de la sauvegarde",
+    "deleteFailed": "Échec de la suppression",
+    "serverError": "Erreur du serveur",
+    "tryAgain": "Veuillez réessayer"
+  },
+  "success": {
+    "saved": "Enregistré avec succès!",
+    "deleted": "Supprimé avec succès!",
+    "created": "Créé avec succès!",
+    "updated": "Mis à jour avec succès!"
+  }
+}

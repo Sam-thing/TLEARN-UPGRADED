@@ -6,15 +6,20 @@ import { generateStudyNotes } from '../services/claudeService.js';
 
 // GET /api/notes
 export const getNotes = catchAsync(async (req, res) => {
-  const { type, search } = req.query;
+  const { type, search, tags } = req.query;
 
   const filter = { user: req.user._id };
   if (type)   filter.type  = type;
   if (search) filter.$text = { $search: search };
 
+  if (tags) {
+    const tagArray = tags.split(',').map(t => t.trim());
+    filter.tags = { $in: tagArray };
+  }
+
   const notes = await Note.find(filter)
     .populate('topic', 'name subject')
-    .sort({ createdAt: -1 });
+    .sort({ isPinned: -1, createdAt: -1 });
 
   res.json({ notes });
 });

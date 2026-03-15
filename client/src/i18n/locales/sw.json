@@ -1,0 +1,137 @@
+{
+  "app": {
+    "name": "T.Learn",
+    "tagline": "Jifunze kwa Kufundisha"
+  },
+  "nav": {
+    "dashboard": "Dashibodi",
+    "topics": "Mada",
+    "studyRooms": "Vyumba vya Kusoma",
+    "notes": "Vidokezo",
+    "sessions": "Vikao",
+    "progress": "Maendeleo",
+    "settings": "Mipangilio",
+    "profile": "Wasifu",
+    "logout": "Toka"
+  },
+  "dashboard": {
+    "welcome": "Karibu tena",
+    "readyToLearn": "Uko tayari kupandisha uelewa wako?",
+    "quickActions": "Vitendo vya Haraka",
+    "recentSessions": "Vikao vya Hivi Karibuni",
+    "recommendedTopics": "Mada Zilizopendekezwa",
+    "activityHeatmap": "Ramani ya Shughuli",
+    "stats": {
+      "sessions": "Vikao",
+      "avgScore": "Alama ya Wastani",
+      "streak": "Mfululizo",
+      "achievements": "Mafanikio",
+      "dontBreak": "Usivunje!",
+      "unlocked": "Zimefunguliwa"
+    }
+  },
+  "topics": {
+    "explore": "Gundua Mada",
+    "findPerfect": "Pata mada kamili ya kufundisha na kustawi",
+    "createTopic": "Unda Mada",
+    "popularTopics": "Mada Maarufu",
+    "searchTopics": "Tafuta mada...",
+    "allSubjects": "Masomo Yote",
+    "allLevels": "Viwango Vyote",
+    "startLearning": "Anza Kujifunza",
+    "noTopics": "Hakuna mada zilizopatikana",
+    "createNew": "Unda mada mpya"
+  },
+  "sessions": {
+    "title": "Vikao vya Kufundisha",
+    "reviewProgress": "Kagua maendeleo yako na boresha ufundishaji wako",
+    "totalSessions": "Vikao Jumla",
+    "avgScore": "Alama ya Wastani",
+    "totalTime": "Muda Jumla",
+    "thisWeek": "Wiki Hii",
+    "searchSessions": "Tafuta vikao...",
+    "filterByScore": "Chuja kwa alama",
+    "allSessions": "Vikao Vyote",
+    "highScore": "Alama Juu (80%+)",
+    "mediumScore": "Alama ya Kati (50-79%)",
+    "needsImprovement": "Inahitaji Kuboresha (<50%)",
+    "noSessions": "Hakuna vikao vilivyopatikana",
+    "startTeaching": "Anza kufundisha kuona vikao vyako hapa",
+    "viewDetails": "Tazama Maelezo",
+    "delete": "Futa"
+  },
+  "progress": {
+    "title": "Maendeleo Yako ya Kujifunza",
+    "trackJourney": "Fuatilia safari yako na sherehekea mafanikio yako",
+    "exportData": "Hamisha Data",
+    "overview": "Muhtasari",
+    "analytics": "Uchambuzi",
+    "goalsAchievements": "Malengo na Mafanikio",
+    "quickStats": "Takwimu za Haraka",
+    "recentSessions": "Vikao vya Hivi Karibuni",
+    "activityHeatmap": "Ramani ya Shughuli",
+    "performanceAnalysis": "Uchambuzi wa Utendaji",
+    "scoreEvolution": "Maendeleo ya Alama",
+    "dailyActivity": "Shughuli za Kila Siku",
+    "topicMastery": "Ustadi wa Mada",
+    "achievements": "Mafanikio",
+    "learningGoals": "Malengo ya Kujifunza",
+    "addCustomGoal": "Ongeza Lengo Maalum"
+  },
+  "teach": {
+    "startTeaching": "Anza Kufundisha",
+    "stopTeaching": "Acha Kufundisha",
+    "saveAsDraft": "Hifadhi kama Rasimu",
+    "submitFeedback": "Wasilisha kwa Maoni",
+    "prepNotes": "Vidokezo vya Maandalizi",
+    "teachingTips": "Vidokezo vya Kufundisha",
+    "keyPoints": "Vidokezo Muhimu vya Kufunika",
+    "liveTranscript": "Maandishi ya Moja kwa Moja",
+    "reviewTeaching": "Kagua Ufundishaji Wako",
+    "audioRecording": "Rekodi ya Sauti",
+    "yourExplanation": "Maelezo Yako",
+    "duration": "Muda",
+    "words": "Maneno"
+  },
+  "common": {
+    "search": "Tafuta",
+    "filter": "Chuja",
+    "viewAll": "Tazama Yote",
+    "loading": "Inapakia...",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "edit": "Hariri",
+    "create": "Unda",
+    "submit": "Wasilisha",
+    "back": "Rudi",
+    "next": "Inayofuata",
+    "done": "Imekamilika",
+    "yes": "Ndiyo",
+    "no": "Hapana",
+    "confirm": "Thibitisha"
+  },
+  "auth": {
+    "login": "Ingia",
+    "register": "Jisajili",
+    "email": "Barua Pepe",
+    "password": "Nywila",
+    "name": "Jina",
+    "forgotPassword": "Umesahau nywila?",
+    "dontHaveAccount": "Huna akaunti?",
+    "alreadyHaveAccount": "Una akaunti tayari?"
+  },
+  "errors": {
+    "loadFailed": "Imeshindwa kupakia",
+    "saveFailed": "Imeshindwa kuhifadhi",
+    "deleteFailed": "Imeshindwa kufuta",
+    "serverError": "Hitilafu ya seva",
+    "tryAgain": "Tafadhali jaribu tena"
+  },
+  "success": {
+    "saved": "Imehifadhiwa!",
+    "deleted": "Imefutwa!",
+    "created": "Imeundwa!",
+    "updated": "Imesasishwa!"
+  }
+}

@@ -19,9 +19,11 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { sessionService } from '@/services/sessionService';
 import { topicService } from '@/services/topicService';
+import { useTranslation } from 'react-i18next';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentSessions, setRecentSessions] = useState([]);
@@ -80,22 +82,22 @@ const DashboardPage = () => {
   const quickActions = [
     {
       icon: BookOpen,
-      title: 'Browse Topics',
-      description: 'Explore library',
+      title: "Browse Topics",
+      description: "Find new subjects to learn",
       action: () => navigate('/topics'),
       gradient: 'from-white-600 to-green-400'
     },
     {
       icon: Users,
-      title: 'Study Rooms',
-      description: 'Join peers',
+      title: "Study Rooms",
+      description: "Join peer learning sessions",
       action: () => navigate('/rooms'),
       gradient: 'from-white-600 to-green-400'
     },
     {
       icon: Target,
-      title: 'My Progress',
-      description: 'View analytics',
+      title: "My Progress",
+      description: "View your analytics",
       action: () => navigate('/progress'),
       gradient: 'from-white-600 to-green-400'
     }
@@ -141,12 +143,13 @@ const DashboardPage = () => {
                 className="font-black text-5xl tracking-[-0.04em] text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)] mb-2"
                 style={{ fontFamily: 'DM Mono, monospace' }}
               >
-                Welcome back{' '}
-                <span className="text-green-700">{user?.name?.split(' ')[0] || 'Learner'}.</span>
+                {t('dashboard.welcome')}, <span className="text-green-700">{user?.name?.split(' ')[0] || 'Learner'}.</span>
+    
               </h1>
               <p className="text-[oklch(0.36_0.010_255)] dark:text-[oklch(0.60_0.008_255)] text-lg">
                 Ready to <span className="text-green-700">level up</span> your understanding?
               </p>
+              
             </div>
 
             {/* Status badge */}
@@ -163,28 +166,28 @@ const DashboardPage = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={BookOpen}
-          title="Sessions"
+          title={t('dashboard.stats.sessions')}
           value={stats?.totalSessions || 0}
           trend="+12%"
           gradient="from-white-600 to-green-400"
         />
         <StatCard
           icon={TrendingUp}
-          title="Avg Score"
+          title={t('dashboard.stats.avgScore')}
           value={`${stats?.averageScore || 0}%`}
           trend="+5%"
           gradient="from-white-600 to-green-400"
         />
         <StatCard
           icon={Flame}
-          title="Streak"
+          title={t('dashboard.stats.streak')}
           value={`${stats?.streak?.current || 0} days`}
-          subtitle="Don't break it"
+          subtitle="Don't break the chain!"
           gradient="from-white-600 to-green-400"
         />
         <StatCard
           icon={Award}
-          title="Achievements"
+          title={t('dashboard.stats.achievements')}
           value={stats?.achievements || 0}
           subtitle="Unlocked"
           gradient="from-white-600 to-green-400"
@@ -198,7 +201,7 @@ const DashboardPage = () => {
             className="font-bold text-2xl tracking-[-0.02em] text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]"
             style={{ fontFamily: 'DM Mono, monospace' }}
           >
-            Quick Actions
+           Quick Actions
           </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
@@ -242,7 +245,7 @@ const DashboardPage = () => {
                 className="font-bold text-xl tracking-[-0.02em] text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]"
                 style={{ fontFamily: 'DM Mono, monospace' }}
               >
-                Recent Sessions
+                {t('dashboard.stats.sessions')}
               </h3>
               <p className="text-sm text-[oklch(0.52_0.008_255)] mt-0.5">
                 Last {recentSessions.length} completed
@@ -252,7 +255,7 @@ const DashboardPage = () => {
               onClick={() => navigate('/sessions')}
               className="text-sm font-medium text-[oklch(0.62_0.17_158)] hover:text-[oklch(0.50_0.17_158)] flex items-center gap-1"
             >
-              View all
+              {t('common.viewAll')}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -287,7 +290,7 @@ const DashboardPage = () => {
               className="font-bold text-xl tracking-[-0.02em] text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)] mb-1"
               style={{ fontFamily: 'Cabinet Grotesk, DM Sans, sans-serif' }}
             >
-              Recommended
+              {t("dashboard.recommendedTopics")}
             </h3>
             <p className="text-sm text-[oklch(0.52_0.008_255)]">
               Based on your learning path
