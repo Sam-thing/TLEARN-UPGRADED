@@ -37,8 +37,9 @@ const httpServer = createServer(app);
 export const io = new Server(httpServer, {
   cors: {
     origin: [
-      process.env.CLIENT_URL || "http://localhost:5173",
-      "https://tlearn-upgraded.vercel.app"
+      "http://localhost:5173",
+      "https://tlearn-upgraded.vercel.app",
+      /\.vercel\.app$/
     ],
     credentials: true
   }
@@ -53,11 +54,23 @@ console.log('🔌 Chat Socket.io initialized');
 
 // ── Middleware ─────────────────────────────────────────
 app.use(helmet());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://tlearn-upgraded.vercel.app"
+];
+
 app.use(cors({
-  origin: [
-      process.env.CLIENT_URL || "http://localhost:5173",
-      "https://tlearn-upgraded.vercel.app"
-    ],
+  origin: function (origin, callback) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 app.use(morgan('dev'));
