@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-export const useSocket = (url = 'https://tlearn-upgraded.vercel.app') => {
+export const useSocket = (url = import.meta.env.VITE_SOCKET_URL) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
 
