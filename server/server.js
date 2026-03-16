@@ -114,6 +114,9 @@ app.use('/api/notifications', notificationRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
+app.get('/', (_req, res) => {
+  res.send('TLearn API running');
+});
 
 // ── Error handler ──────────────────────────────────────
 app.use(errorHandler);
