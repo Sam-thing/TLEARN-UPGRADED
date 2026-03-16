@@ -56,6 +56,7 @@ console.log('🔌 Chat Socket.io initialized');
 app.use(helmet());
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:3000",
   "https://tlearn-upgraded.vercel.app"
 ];
 
