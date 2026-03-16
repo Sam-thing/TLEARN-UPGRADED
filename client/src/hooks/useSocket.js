@@ -1,16 +1,18 @@
-import { useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect, useState, useRef } from "react";
+import { io } from "socket.io-client";
 
 export const useSocket = (url = import.meta.env.VITE_SOCKET_URL) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    
+    const token = localStorage.getItem("token");
+
     const socket = io(url, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5
     });
 
     socket.on('connect', () => {
