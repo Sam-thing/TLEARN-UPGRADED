@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://tlearn-api.onrender.com',
+  baseURL: 'https://tlearnapp.onrender.com',
   withCredentials: true,
 });
 
