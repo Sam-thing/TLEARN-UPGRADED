@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://tlearn-api.onrender.com/api',
+  baseURL: 'https://tlearnapp.onrender.com/api',
 });
 
 // Request interceptor - Add auth token
