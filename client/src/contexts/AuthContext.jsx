@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           // Verify token and get user data
-          const response = await axios.get('https://tlearn-upgraded.vercel.app/api/auth/me', {
+          const response = await axios.get('https://tlearn-api.onrender.com/api/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
           
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('https://tlearn-upgraded.vercel.app/api/auth/login', {
+      const response = await axios.post('https://tlearn-api.onrender.com/api/auth/login', {
         email,
         password
       });
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await axios.post('https://tlearn-upgraded.vercel.app/api/auth/register', {
+      const response = await axios.post('https://tlearn-api.onrender.com/api/auth/register', {
         name,
         email,
         password
