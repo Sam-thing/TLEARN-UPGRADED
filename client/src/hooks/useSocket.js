@@ -11,8 +11,7 @@ export const useSocket = (url = import.meta.env.VITE_SOCKET_URL) => {
     const socket = io(url, {
       auth: { token },
       transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: 5
+      upgrade: false
     });
 
     socket.on('connect', () => {
