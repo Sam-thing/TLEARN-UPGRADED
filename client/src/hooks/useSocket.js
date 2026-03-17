@@ -11,17 +11,23 @@ export const useSocket = (url = import.meta.env.VITE_SOCKET_URL) => {
     const socket = io(url, {
       auth: { token },
       transports: ["websocket"],
-      upgrade: false
+      upgrade: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
     });
 
-    socket.on('connect', () => {
-      console.log('Socket connected');
+    socket.on("connect", () => {
+      console.log("✅ Socket connected");
       setIsConnected(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
       setIsConnected(false);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("❌ Socket connection error:", err.message);
     });
 
     socketRef.current = socket;
@@ -32,21 +38,15 @@ export const useSocket = (url = import.meta.env.VITE_SOCKET_URL) => {
   }, [url]);
 
   const emit = (event, data) => {
-    if (socketRef.current) {
-      socketRef.current.emit(event, data);
-    }
+    socketRef.current?.emit(event, data);
   };
 
   const on = (event, callback) => {
-    if (socketRef.current) {
-      socketRef.current.on(event, callback);
-    }
+    socketRef.current?.on(event, callback);
   };
 
   const off = (event, callback) => {
-    if (socketRef.current) {
-      socketRef.current.off(event, callback);
-    }
+    socketRef.current?.off(event, callback);
   };
 
   return {
