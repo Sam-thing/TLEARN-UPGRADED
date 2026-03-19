@@ -1,7 +1,7 @@
 // src/services/roomService.js - FIXED VERSION
-import api from '@/utils/api';
+import api from '@/utils/axios';
 
-const API_URL = '/rooms'; // ✅ No /api prefix (already in baseURL)
+const API_URL = '/rooms'; 
 
 export const roomService = {
   // Get all rooms with optional filters

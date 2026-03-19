@@ -1,5 +1,5 @@
 // src/services/notesService.js - ACTUALLY FIXED THIS TIME
-import api from '@/utils/axios'; // ← USE YOUR CUSTOM AXIOS!
+import api from '@/utils/axios'; 
 
 const API_URL = `${import.meta.env.VITE_API_URL}/notes`;
 

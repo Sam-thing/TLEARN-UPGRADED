@@ -1,4 +1,4 @@
-import api from './api';
+import api from '@/utils/axios';
 
 export const topicService = {
   async getAll(filters = {}) {

@@ -1,5 +1,5 @@
 // src/services/sessionService.js
-import api from './api';
+import api from '@/utils/axios';
 
 export const sessionService = {
   // Get all sessions for current user
