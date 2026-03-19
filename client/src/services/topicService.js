@@ -1,39 +1,49 @@
-import api from './api';
+// src/services/topicService.js
+import api from '@/utils/axios';
 
 export const topicService = {
   async getAll(filters = {}) {
-    return await api.get('/topics', { params: filters });
+    const response = await api.get('/topics', { params: filters });
+    return response.topics || response;  // ← Extract .topics
   },
 
   async getById(id) {
-    return await api.get(`/topics/${id}`);
+    const response = await api.get(`/topics/${id}`);
+    return response.topic || response;  // ← Extract .topic
   },
 
   async create(data) {
-    return await api.post('/topics', data);
+    const response = await api.post('/topics', data);
+    return response.topic || response;
   },
 
   async update(id, data) {
-    return await api.put(`/topics/${id}`, data);
+    const response = await api.put(`/topics/${id}`, data);
+    return response.topic || response;
   },
 
   async delete(id) {
-    return await api.delete(`/topics/${id}`);
+    const response = await api.delete(`/topics/${id}`);
+    return response;
   },
 
   async search(query) {
-    return await api.get('/topics/search', { params: { q: query } });
+    const response = await api.get('/topics/search', { params: { q: query } });
+    return response.topics || response;
   },
 
   async getPopular() {
-    return await api.get('/topics/popular');
+    const response = await api.get('/topics/popular');
+    return response.topics || response;  // ← Extract .topics
   },
 
   async getRecommended() {
-    return await api.get('/topics/recommended');
+    const response = await api.get('/topics/recommended');
+    return response.topics || response;  // ← Extract .topics
   },
 
   async generatePrepNotes(id) {
-    return await api.post(`/topics/${id}/prep-notes`);
+    const response = await api.post(`/topics/${id}/prep-notes`);
+    return response;
   },
 };

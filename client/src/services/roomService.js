@@ -6,20 +6,20 @@ const API_URL = '/rooms';
 export const roomService = {
   // Get all rooms with optional filters
   async getAll(filters = {}) {
-    const response = await api.get(API_URL, { params: filters });
-    return response;
+    const response = await api.get('/rooms', { params: filters });
+    return response.rooms || response;
   },
 
   // Get single room by ID
   async getById(id) {
     const response = await api.get(`${API_URL}/${id}`);
-    return response;
+    return response.room || response;
   },
 
   // Create new room
   async create(data) {
     const response = await api.post(API_URL, data);
-    return response;
+    return response.room || response;
   },
 
   // Join a room
@@ -33,19 +33,19 @@ export const roomService = {
   // Leave a room
   async leave(id) {
     const response = await api.post(`${API_URL}/${id}/leave`);
-    return response;
+    return response.rooms || response;  
   },
 
   // Get matched rooms for a topic
   async getMatched(topicId) {
     const response = await api.get(`${API_URL}/matched/${topicId}`);
-    return response;
+    return response.rooms || response;
   },
 
   // Get room members
   async getMembers(id) {
     const response = await api.get(`${API_URL}/${id}/members`);
-    return response;
+    return response.members || response;
   },
 
   // Get room messages
@@ -53,7 +53,7 @@ export const roomService = {
     const response = await api.get(`${API_URL}/${id}/messages`, { 
       params: { limit } 
     });
-    return response;
+    return response.messages || response;
   },
 
   // Send message to room

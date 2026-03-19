@@ -6,8 +6,8 @@ const API_URL = `${import.meta.env.VITE_API_URL}/notes`;
 export const notesService = {
   // Get all notes
   async getAll() {
-    const response = await api.get(API_URL); // ← api, not axios
-    return response.data.notes;
+    const response = await api.get('/notes');
+    return response.notes;
   },
 
   // Get single note
