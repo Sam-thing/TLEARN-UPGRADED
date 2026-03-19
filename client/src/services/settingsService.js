@@ -1,7 +1,7 @@
 // src/services/settingsService.js
 import api from '@/utils/axios';
 
-const API_URL = '/api/settings';
+const API_URL = `${import.meta.env.VITE_API_URL}/settings`;
 
 export const settingsService = {
   // Get user settings
