@@ -1,39 +1,66 @@
-import api from './api';
+// src/services/roomService.js - FIXED VERSION
+import api from '@/utils/api';
+
+const API_URL = '/rooms'; // ✅ No /api prefix (already in baseURL)
 
 export const roomService = {
+  // Get all rooms with optional filters
   async getAll(filters = {}) {
-    return await api.get('/rooms', { params: filters });
+    const response = await api.get(API_URL, { params: filters });
+    return response;
   },
 
+  // Get single room by ID
   async getById(id) {
-    return await api.get(`/rooms/${id}`);
+    const response = await api.get(`${API_URL}/${id}`);
+    return response;
   },
 
+  // Create new room
   async create(data) {
-    return await api.post('/rooms', data);
+    const response = await api.post(API_URL, data);
+    return response;
   },
 
+  // Join a room
   async join(id, consent = true) {
-    return await api.post(`/rooms/${id}/join`, { hasConsented: consent });
+    const response = await api.post(`${API_URL}/${id}/join`, { 
+      hasConsented: consent 
+    });
+    return response;
   },
 
+  // Leave a room
   async leave(id) {
-    return await api.post(`/rooms/${id}/leave`);
+    const response = await api.post(`${API_URL}/${id}/leave`);
+    return response;
   },
 
+  // Get matched rooms for a topic
   async getMatched(topicId) {
-    return await api.get(`/rooms/matched/${topicId}`);
+    const response = await api.get(`${API_URL}/matched/${topicId}`);
+    return response;
   },
 
+  // Get room members
   async getMembers(id) {
-    return await api.get(`/rooms/${id}/members`);
+    const response = await api.get(`${API_URL}/${id}/members`);
+    return response;
   },
 
+  // Get room messages
   async getMessages(id, limit = 50) {
-    return await api.get(`/rooms/${id}/messages`, { params: { limit } });
+    const response = await api.get(`${API_URL}/${id}/messages`, { 
+      params: { limit } 
+    });
+    return response;
   },
 
-  async sendMessage(id, content) {
-    return await api.post(`/rooms/${id}/messages`, content);
+  // Send message to room
+  async sendMessage(roomId, content) {
+    const response = await api.post(`${API_URL}/${roomId}/messages`, { 
+      content 
+    });
+    return response;
   },
 };

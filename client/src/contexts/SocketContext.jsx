@@ -1,4 +1,4 @@
-// src/contexts/SocketContext.jsx - Socket.io Context
+// src/contexts/SocketContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
@@ -11,44 +11,58 @@ export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      const token = localStorage.getItem('token');
-      
-      // Create socket connection
-      // VITE FIX: Use import.meta.env instead of process.env
-      const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
-        auth: { token }
-      });
-
-      newSocket.on('connect', () => {
-        console.log('✅ Socket connected');
-        setConnected(true);
-      });
-
-      newSocket.on('disconnect', () => {
-        console.log('❌ Socket disconnected');
-        setConnected(false);
-      });
-
-      newSocket.on('connect_error', (error) => {
-        console.error('❌ Socket connection error:', error.message);
-        setConnected(false);
-      });
-
-      setSocket(newSocket);
-
-      // Cleanup on unmount
-      return () => {
-        newSocket.close();
-      };
-    } else {
-      // Disconnect if user logs out
+    if (!user) {
       if (socket) {
-        socket.close();
+        socket.disconnect();
         setSocket(null);
         setConnected(false);
       }
+      return;
     }
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+    console.log('🔌 Connecting to socket:', SOCKET_URL);
+    
+    const newSocket = io(SOCKET_URL, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
+
+    newSocket.on('connect', () => {
+      console.log('✅ Socket connected:', newSocket.id);
+      setConnected(true);
+      
+      if (user?._id) {
+        newSocket.emit('authenticate', user._id);
+      }
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('❌ Socket disconnected:', reason);
+      setConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error.message);
+      setConnected(false);
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('❌ Socket error:', error);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      console.log('🔌 Cleaning up socket connection');
+      newSocket.disconnect();
+    };
   }, [user]);
 
   return (

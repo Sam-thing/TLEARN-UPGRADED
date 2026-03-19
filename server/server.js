@@ -41,8 +41,10 @@ export const io = new Server(httpServer, {
       "https://tlearn-upgraded.vercel.app",
       /\.vercel\.app$/
     ],
+     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  transports: ["websocket", "polling"]  // ← Add polling as fallback
 });
 
 // Setup existing socket functionality (teaching sessions, etc.)

@@ -38,7 +38,7 @@ function App() {
     <ThemeProvider>
       <Router>
         <AuthProvider>
-          <SocketProvider> {/* ← Wrap ENTIRE app */}
+          <SocketProvider>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
