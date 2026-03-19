@@ -12,7 +12,7 @@ import TopicsPage from './pages/topics/TopicsPage'; // ← Fixed import
 import TopicDetailPage from './pages/topics/TopicDetailPage';
 import NotesPage from './pages/notes/NotesPage';
 import ProgressPage from './pages/progress/ProgressPage';
-import RoomDetailPage from './pages/rooms/RoomDetailPage'; // ← Fixed import
+import RoomPage from './pages/rooms/RoomPage'; // ← Fixed import
 import RoomChatPage from './pages/rooms/RoomChatPage'; // ← Chat page
 import ProfilePage from './pages/profile/ProfilePage';
 import SettingsPage from './pages/settings/SettingsPage';
@@ -69,7 +69,7 @@ function App() {
                 <Route path="/notes" element={<NotesPage />} />
                 
                 {/* Study Rooms */}
-                <Route path="/rooms" element={<RoomDetailPage />} />
+                <Route path="/rooms" element={<RoomPage />} />
                 <Route path="/rooms/:roomId" element={<RoomChatPage />} /> {/* ← Chat room */}
                 
                 {/* Progress */}
