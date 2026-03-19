@@ -1,5 +1,5 @@
 // src/services/roomService.js 
-import api from '@/utils/api';
+import api from '@/utils/axios';
 
 const API_URL = '/rooms';
 
