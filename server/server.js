@@ -33,7 +33,7 @@ dns.setServers(['8.8.8.8']);
 const app        = express();
 const httpServer = createServer(app);
 
-// ── Socket.io Setup (Combined) ──────────────────────────
+// ── Socket.io Setup (SINGLE INSTANCE) ──────────────────
 export const io = new Server(httpServer, {
   cors: {
     origin: [
@@ -41,17 +41,17 @@ export const io = new Server(httpServer, {
       "https://tlearn-upgraded.vercel.app",
       /\.vercel\.app$/
     ],
-     methods: ["GET", "POST"],
+    methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ["websocket", "polling"]  // ← Add polling as fallback
+  transports: ["websocket", "polling"]
 });
 
 // Setup existing socket functionality (teaching sessions, etc.)
 setupSocket(io);
 
-// Setup new chat socket functionality (real-time messaging)
-initializeSocket(httpServer);
+// Setup chat socket functionality - PASS THE EXISTING io INSTANCE
+initializeSocket(io);  // ← Changed from httpServer to io
 console.log('🔌 Chat Socket.io initialized');
 
 // ── Middleware ─────────────────────────────────────────

@@ -1,21 +1,10 @@
 // server/socket/socket.js - Socket.io Setup
-import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
 let io;
 
-export const initializeSocket = (server) => {
-  io = new Server(server, {
-    cors: {
-      origin: [
-        "http://localhost:5173",
-        "https://tlearn-upgraded.vercel.app"
-      ],
-      methods: ["GET", "POST"],
-      credentials: true
-    },
-    transports: ["websocket"]
-  });
+export const initializeSocket = (ioInstance) => {  // ← Accept io instance
+  io = ioInstance;  // ← Use passed instance, don't create new one
 
   // Authentication middleware
   io.use((socket, next) => {
@@ -27,10 +16,9 @@ export const initializeSocket = (server) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('🔑 Decoded JWT token:', decoded); // DEBUG: See what's in the token
+      console.log('🔑 Decoded JWT token:', decoded);
       
       socket.userId = decoded.id || decoded._id || decoded.userId;
-      // Try multiple possible name fields
       socket.userName = decoded.name || decoded.username || decoded.fullName || decoded.firstName || 'User';
       
       console.log('👤 Socket user set:', {
@@ -59,14 +47,12 @@ export const initializeSocket = (server) => {
       socket.currentRoom = roomId;
       console.log(`👤 ${socket.userName} joined room: ${roomId}`);
       
-      // Notify others in room
       socket.to(roomId).emit('user-joined', {
         userId: socket.userId,
         userName: socket.userName,
         timestamp: new Date()
       });
 
-      // Send online users count
       const roomSockets = io.sockets.adapter.rooms.get(roomId);
       const onlineCount = roomSockets ? roomSockets.size : 0;
       io.to(roomId).emit('room-users-update', { count: onlineCount });
@@ -83,7 +69,6 @@ export const initializeSocket = (server) => {
         timestamp: new Date()
       });
 
-      // Update online count
       const roomSockets = io.sockets.adapter.rooms.get(roomId);
       const onlineCount = roomSockets ? roomSockets.size : 0;
       io.to(roomId).emit('room-users-update', { count: onlineCount });
@@ -93,14 +78,13 @@ export const initializeSocket = (server) => {
     socket.on('send-message', (data) => {
       const { roomId, message } = data;
       
-      // Broadcast to everyone in room (including sender)
       io.to(roomId).emit('receive-message', {
-        _id: Date.now().toString(), // Temporary ID until saved to DB
+        _id: Date.now().toString(),
         userId: socket.userId,
         userName: socket.userName,
         message,
         timestamp: new Date(),
-        pending: true // Will be replaced when saved to DB
+        pending: true
       });
     });
 
@@ -123,19 +107,17 @@ export const initializeSocket = (server) => {
       console.log(`❌ User disconnected: ${socket.userName}`);
       
       if (socket.currentRoom) {
-        // Send user left notification with proper userName
         io.to(socket.currentRoom).emit('user-left', {
           userId: socket.userId,
-          userName: socket.userName, // This should be set from JWT
+          userName: socket.userName,
           timestamp: new Date()
         });
 
-        // Update online count
         setTimeout(() => {
           const roomSockets = io.sockets.adapter.rooms.get(socket.currentRoom);
           const onlineCount = roomSockets ? roomSockets.size : 0;
           io.to(socket.currentRoom).emit('room-users-update', { count: onlineCount });
-        }, 100); // Small delay to ensure socket has left room
+        }, 100);
       }
     });
   });
