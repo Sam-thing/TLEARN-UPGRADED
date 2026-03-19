@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
 const API_URL = import.meta.env.VITE_API_URL;
 console.log("API URL:", API_URL);
 
@@ -12,14 +13,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // FIX: Restore user from token on page load
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
       
       if (token) {
         try {
-          // Verify token and get user data
           const response = await axios.get(`${API_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -89,6 +88,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     navigate('/login');
   };
+
+  // ✅ ADD THIS - Show loading screen while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-forest border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-text-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>

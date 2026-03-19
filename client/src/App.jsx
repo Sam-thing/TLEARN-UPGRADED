@@ -37,6 +37,7 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
+        <ErrorBoundary>
         <AuthProvider>
           <SocketProvider>
             <Routes>
@@ -92,6 +93,7 @@ function App() {
             />
           </SocketProvider> {/* ← Close here */}
         </AuthProvider>
+        </ErrorBoundary>
       </Router>
     </ThemeProvider>
   );

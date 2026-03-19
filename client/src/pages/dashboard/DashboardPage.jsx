@@ -36,40 +36,30 @@ const DashboardPage = () => {
 
   const loadDashboardData = async () => {
     try {
+      // Load each service with individual error handling
       const [statsData, sessionsData, topicsData] = await Promise.all([
-        sessionService.getStats(),
-        sessionService.getRecent(5),
-        topicService.getRecommended()
+        sessionService.getStats().catch(err => {
+          console.error('Stats failed:', err);
+          return null;
+        }),
+        sessionService.getRecent(5).catch(err => {
+          console.error('Sessions failed:', err);
+          return { sessions: [] };
+        }),
+        topicService.getRecommended().catch(err => {
+          console.error('Topics failed:', err);
+          return { topics: [] };
+        })
       ]);
       
-      setStats(statsData);
+      setStats(statsData || {});
       
-      // FIX: Always ensure arrays
       const sessions = sessionsData?.sessions || sessionsData || [];
       const topics = topicsData?.topics || topicsData || [];
       
-      // DEBUG: Log what we got from backend
-      console.log('📊 Dashboard Data Loaded:');
-      console.log('Stats:', statsData);
-      console.log('Sessions raw:', sessionsData);
-      console.log('Sessions processed:', sessions);
-      console.log('Topics raw:', topicsData);
-      console.log('Topics processed:', topics);
-      
-      // Check each topic for ID
-      if (Array.isArray(topics)) {
-        topics.forEach((topic, i) => {
-          console.log(`Topic ${i}:`, {
-            name: topic.name,
-            _id: topic._id,
-            id: topic.id,
-            hasValidId: !!(topic._id || topic.id)
-          });
-        });
-      }
-      
       setRecentSessions(Array.isArray(sessions) ? sessions : []);
       setRecommendedTopics(Array.isArray(topics) ? topics : []);
+      
     } catch (error) {
       console.error('Failed to load dashboard:', error);
       setRecentSessions([]);

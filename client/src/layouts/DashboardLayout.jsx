@@ -97,7 +97,7 @@ const DashboardLayout = () => {
             <div className="w-8 h-8 bg-gradient-to-br from-[oklch(0.62_0.17_158)] to-[oklch(0.55_0.17_158)] rounded-lg flex items-center justify-center shadow-lg">
               <span className="text-white font-bold" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>T</span>
             </div>
-            <span className="font-bold text-lg text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>
+            <span className="DM Mono, monospace text-lg text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>
               T.Learn
             </span>
           </div>
