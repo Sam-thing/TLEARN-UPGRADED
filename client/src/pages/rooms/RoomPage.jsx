@@ -55,11 +55,19 @@ const RoomsPage = () => {
 
   const loadRooms = async () => {
     try {
-      const data = await roomService.getAll();
-      setRooms(data.rooms || data);
-      setMatchedRooms(data.matchedRooms || []);
+      const data = await roomService.getAll();  // Already returns array or .rooms
+      
+      console.log('📊 Rooms data:', data);
+      console.log('Is array?', Array.isArray(data));
+      
+      // Service already extracted .rooms, so use data directly
+      setRooms(Array.isArray(data) ? data : []);
+      setMatchedRooms([]);  // Clear or load separately
+      
     } catch (error) {
+      console.error('Failed to load rooms:', error);
       toast.error('Failed to load rooms');
+      setRooms([]);
     } finally {
       setLoading(false);
     }
