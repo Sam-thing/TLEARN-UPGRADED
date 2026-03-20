@@ -1,4 +1,4 @@
-// src/pages/rooms/RoomChatPage.jsx - Full Chat Interface
+// src/pages/rooms/RoomChatPage.jsx - FIXED VERSION
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,12 +6,12 @@ import {
   ArrowLeft,
   Send,
   Users,
-  MoreVertical,
   Info,
-  Settings as SettingsIcon,
-  LogOut
+  LogOut,
+  Mic,
+  Paperclip,
+  Search
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -19,21 +19,17 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
-import axios from 'axios';
+import api from '@/utils/axios';
 import ReadReceipts from '@/components/chat/ReadReceipts';
 import { getAvatarColor, getInitials } from '@/utils/avatarColors';
-import { Mic } from 'lucide-react';  
 import VoiceRecorder from '@/components/chat/VoiceRecorder';
 import AudioPlayer from '@/components/chat/AudioPlayer';
 import MessageReactions from '@/components/chat/MessageReactions';
 import MessageActions from '@/components/chat/MessageActions';
-import { Paperclip } from 'lucide-react';
-import { Search } from 'lucide-react';
 import PinnedMessages from '@/components/chat/PinnedMessages';
 import FileUploader from '@/components/chat/FileUploader';
 import FilePreview from '@/components/chat/FilePreview';
 import MessageSearch from '@/components/chat/MessageSearch';
-
 
 const RoomChatPage = () => {
   const { roomId } = useParams();
@@ -57,9 +53,11 @@ const RoomChatPage = () => {
 
   // Load room and messages on mount
   useEffect(() => {
-    loadRoom();
-    loadMessages();
-  }, [roomId]);
+    if (user) {
+      loadRoom();
+      loadMessages();
+    }
+  }, [roomId, user]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -82,7 +80,6 @@ const RoomChatPage = () => {
     if (!socket || !roomId) return;
 
     console.log('🔌 Setting up socket listeners for room:', roomId);
-    console.log('👤 Current user:', user);
 
     // Join room
     socket.emit('join-room', roomId);
@@ -95,7 +92,6 @@ const RoomChatPage = () => {
 
     // Listen for user joined/left
     socket.on('user-joined', (data) => {
-      console.log('👋 User joined:', data);
       const systemMessage = {
         _id: Date.now().toString(),
         type: 'system',
@@ -106,11 +102,6 @@ const RoomChatPage = () => {
     });
 
     socket.on('user-left', (data) => {
-      console.log('👋 User left event received:');
-      console.log('   userId:', data.userId);
-      console.log('   userName:', data.userName);
-      console.log('   timestamp:', data.timestamp);
-      
       const systemMessage = {
         _id: Date.now().toString(),
         type: 'system',
@@ -122,13 +113,11 @@ const RoomChatPage = () => {
 
     // Online users count
     socket.on('room-users-update', (data) => {
-      console.log('👥 Online count updated:', data.count);
       setOnlineCount(data.count);
     });
 
     // Typing indicators
     socket.on('user-typing', (data) => {
-      console.log('⌨️ User typing:', data);
       setTypingUsers(prev => {
         if (!prev.find(u => u.userId === data.userId)) {
           return [...prev, data];
@@ -138,72 +127,58 @@ const RoomChatPage = () => {
     });
 
     socket.on('user-stopped-typing', (data) => {
-      console.log('⌨️ User stopped typing:', data.userId);
       setTypingUsers(prev => prev.filter(u => u.userId !== data.userId));
     });
 
-        // Listen for reactions
+    // Listen for reactions
     socket.on('message-reacted', (data) => {
-    console.log('👍 Message reacted:', data);
-    setMessages(prev => prev.map(msg => 
+      setMessages(prev => prev.map(msg => 
         msg._id === data.messageId 
-        ? { ...msg, reactions: data.reactions }
-        : msg
-    ));
+          ? { ...msg, reactions: data.reactions }
+          : msg
+      ));
     });
 
     // Listen for edits
     socket.on('message-edited', (data) => {
-    console.log('✏️ Message edited:', data);
-    setMessages(prev => prev.map(msg => 
+      setMessages(prev => prev.map(msg => 
         msg._id === data.messageId 
-        ? { ...msg, content: data.content, message: data.content, isEdited: true, editedAt: data.editedAt }
-        : msg
-    ));
+          ? { ...msg, content: data.content, message: data.content, isEdited: true, editedAt: data.editedAt }
+          : msg
+      ));
     });
 
     // Listen for deletes
     socket.on('message-deleted', (data) => {
-    console.log('🗑️ Message deleted:', data);
-    setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
+      setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
     });
 
     // Listen for pins
     socket.on('message-pinned', (data) => {
-      console.log('📌 Message pinned:', data);
       setMessages(prev => prev.map(msg => 
         msg._id === data.messageId 
           ? { ...msg, isPinned: data.isPinned, pinnedAt: data.pinnedAt }
           : msg
       ));
-      
-      // Reload pinned messages in PinnedMessages component
       window.dispatchEvent(new Event('reload-pinned'));
     });
 
-// In cleanup:
-socket.off('message-pinned');
-
     // Listen for read receipts
     socket.on('messages-read', (data) => {
-    console.log('📖 Messages read:', data);
-    setMessages(prev => prev.map(msg => {
-      if (data.messageIds.includes(msg._id)) {
-        return {
-          ...msg,
-          readBy: [...(msg.readBy || []), {
-            user: data.userId,
-            userName: data.userName,
-            readAt: new Date()
-          }]
-        };
-      }
-      return msg;
-    }));
-  });
-
-  // In cleanup:
-  socket.off('messages-read');
+      setMessages(prev => prev.map(msg => {
+        if (data.messageIds.includes(msg._id)) {
+          return {
+            ...msg,
+            readBy: [...(msg.readBy || []), {
+              user: data.userId,
+              userName: data.userName,
+              readAt: new Date()
+            }]
+          };
+        }
+        return msg;
+      }));
+    });
 
     // Cleanup
     return () => {
@@ -214,31 +189,31 @@ socket.off('message-pinned');
       socket.off('room-users-update');
       socket.off('user-typing');
       socket.off('user-stopped-typing');
+      socket.off('message-reacted');
+      socket.off('message-edited');
+      socket.off('message-deleted');
+      socket.off('message-pinned');
+      socket.off('messages-read');
     };
   }, [socket, roomId, user]);
 
+  // Mark messages as read
   useEffect(() => {
-    if (!socket || !messages.length) return;
+    if (!socket || !messages.length || !user) return;
 
-    // Mark visible messages as read
     const unreadMessages = messages.filter(
-      msg => msg.userId !== user?.id && 
+      msg => msg.userId !== user.id && 
       msg.type !== 'system' &&
-      (!msg.readBy || !msg.readBy.some(r => r.user === user?.id))
+      (!msg.readBy || !msg.readBy.some(r => r.user === user.id))
     );
 
     if (unreadMessages.length > 0) {
       const messageIds = unreadMessages.map(m => m._id);
       
-      // Mark as read in backend
-      const token = localStorage.getItem('token');
-      axios.post(
-        `http://localhost:5000/api/messages/room/${roomId}/read`,
-        { messageIds },
-        { headers: { Authorization: `Bearer ${token}` } }
-      ).catch(err => console.error('Failed to mark as read:', err));
+      api.post(`/messages/room/${roomId}/read`, { messageIds })
+        .catch(err => console.error('Failed to mark as read:', err));
     }
-  }, [messages, user?.id, socket, roomId]);
+  }, [messages, user, socket, roomId]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -247,16 +222,45 @@ socket.off('message-pinned');
 
   const loadRoom = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/rooms/${roomId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setRoom(response.data);
+      const response = await api.get(`/rooms/${roomId}`);
+      setRoom(response.room || response);
     } catch (error) {
       toast.error('Failed to load room');
       navigate('/rooms');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMessages = async () => {
+    try {
+      const response = await api.get(`/messages/room/${roomId}`);
+      
+      const dbMessages = (response.messages || response || []).map(msg => ({
+        _id: msg._id,
+        userId: msg.sender?._id || msg.sender,
+        userName: msg.senderName || msg.sender?.name,
+        message: msg.content,
+        content: msg.content,
+        type: msg.type || 'text',
+        timestamp: msg.createdAt,
+        createdAt: msg.createdAt,
+        audioUrl: msg.audioUrl,
+        duration: msg.duration,
+        waveformData: msg.waveformData || [],
+        fileUrl: msg.fileUrl,
+        fileName: msg.fileName,
+        fileType: msg.fileType,
+        fileSize: msg.fileSize,
+        mimeType: msg.mimeType,
+        reactions: msg.reactions || {},
+        isEdited: msg.isEdited,
+        editedAt: msg.editedAt
+      }));
+      
+      setMessages(dbMessages);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
     }
   };
 
@@ -270,50 +274,6 @@ socket.off('message-pinned');
       }, 2000);
     }
   };
-
-  const loadMessages = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await axios.get(`http://localhost:5000/api/messages/room/${roomId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    
-    // Normalize messages from database
-    const dbMessages = (response.data.messages || []).map(msg => ({
-        _id: msg._id,
-        userId: msg.sender?._id || msg.sender,
-        userName: msg.senderName || msg.sender?.name,
-        message: msg.content,
-        content: msg.content,
-        type: msg.type || 'text',
-        timestamp: msg.createdAt,
-        createdAt: msg.createdAt,
-        // Audio fields
-        audioUrl: msg.audioUrl,
-        duration: msg.duration,
-        waveformData: msg.waveformData || [],
-        // File fields - ADD THESE 5 LINES!
-        fileUrl: msg.fileUrl,
-        fileName: msg.fileName,
-        fileType: msg.fileType,
-        fileSize: msg.fileSize,
-        mimeType: msg.mimeType,
-        // Polish fields
-        reactions: msg.reactions || {},
-        isEdited: msg.isEdited,
-        editedAt: msg.editedAt
-        }));
-        
-        console.log('📚 Loaded', dbMessages.length, 'messages from DB');
-        console.log('👤 Current user ID:', user?.id);
-        
-        setMessages(dbMessages);
-        } catch (error) {
-            console.error('Failed to load messages:', error);
-        }
-    };
-
-
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -331,12 +291,7 @@ socket.off('message-pinned');
 
     // Also save to database
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `http://localhost:5000/api/messages/room/${roomId}`,
-        { content: messageContent },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/messages/room/${roomId}`, { content: messageContent });
     } catch (error) {
       console.error('Failed to save message:', error);
     }
@@ -345,22 +300,17 @@ socket.off('message-pinned');
     socket.emit('typing-stop', roomId);
   };
 
-  
-
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
 
     if (!socket) return;
 
-    // Send typing indicator
     socket.emit('typing-start', roomId);
 
-    // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Stop typing after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('typing-stop', roomId);
     }, 2000);
@@ -368,111 +318,109 @@ socket.off('message-pinned');
 
   const handleSendVoiceMessage = async ({ audioBlob, duration, waveform }) => {
     try {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'voice-message.webm');
-        formData.append('duration', duration.toString());
-        formData.append('waveformData', JSON.stringify(waveform));
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice-message.webm');
+      formData.append('duration', duration.toString());
+      formData.append('waveformData', JSON.stringify(waveform));
 
-        const token = localStorage.getItem('token');
-        await axios.post(
-        `http://localhost:5000/api/audio/room/${roomId}`,
-        formData,
-        {
-            headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-            }
-        }
-        );
+      await api.post(`/audio/room/${roomId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
-        setShowVoiceRecorder(false);
-        toast.success('Voice message sent!');
+      setShowVoiceRecorder(false);
+      toast.success('Voice message sent!');
     } catch (error) {
-        console.error('Failed to send voice message:', error);
-        toast.error('Failed to send voice message');
+      console.error('Failed to send voice message:', error);
+      toast.error('Failed to send voice message');
     }
-};  
+  };
 
-    const handleReact = async (messageId, emoji) => {
+  const handleReact = async (messageId, emoji) => {
     try {
-        const token = localStorage.getItem('token');
-        await axios.post(
-        `http://localhost:5000/api/messages/${messageId}/react`,
-        { emoji },
-        { headers: { Authorization: `Bearer ${token}` } }
-        );
+      await api.post(`/messages/${messageId}/react`, { emoji });
     } catch (error) {
-        console.error('Failed to react:', error);
-        toast.error('Failed to add reaction');
+      console.error('Failed to react:', error);
+      toast.error('Failed to add reaction');
     }
-    };
+  };
 
-    const handleEdit = (message) => {
+  const handleEdit = (message) => {
     setEditingMessage(message);
     setEditText(message.content || message.message);
-    };
+  };
 
-    const handleSaveEdit = async (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     
     if (!editText.trim() || !editingMessage) return;
 
     try {
-        const token = localStorage.getItem('token');
-        await axios.patch(
-        `http://localhost:5000/api/messages/${editingMessage._id}`,
-        { content: editText.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        setEditingMessage(null);
-        setEditText('');
-        toast.success('Message edited');
+      await api.patch(`/messages/${editingMessage._id}`, { content: editText.trim() });
+      
+      setEditingMessage(null);
+      setEditText('');
+      toast.success('Message edited');
     } catch (error) {
-        console.error('Failed to edit message:', error);
-        toast.error('Failed to edit message');
+      console.error('Failed to edit message:', error);
+      toast.error('Failed to edit message');
     }
-    };
+  };
 
-    const handleCancelEdit = () => {
+  const handleCancelEdit = () => {
     setEditingMessage(null);
     setEditText('');
-    };
+  };
 
-    const handleDelete = async (messageId) => {
+  const handleDelete = async (messageId) => {
     if (!confirm('Delete this message?')) return;
 
     try {
-        const token = localStorage.getItem('token');
-        await axios.delete(
-        `http://localhost:5000/api/messages/${messageId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        toast.success('Message deleted');
+      await api.delete(`/messages/${messageId}`);
+      toast.success('Message deleted');
     } catch (error) {
-        console.error('Failed to delete message:', error);
-        toast.error('Failed to delete message');
+      console.error('Failed to delete message:', error);
+      toast.error('Failed to delete message');
     }
-    };
+  };
 
-    const handleCopy = (text) => {
+  const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
-    };
+  };
 
   const handleLeaveRoom = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `http://localhost:5000/api/rooms/${roomId}/leave`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/rooms/${roomId}/leave`);
       toast.success('Left room');
       navigate('/rooms');
     } catch (error) {
       toast.error('Failed to leave room');
+    }
+  };
+
+  const handlePin = async (messageId) => {
+    try {
+      await api.post(`/messages/${messageId}/pin`);
+    } catch (error) {
+      console.error('Failed to pin message:', error);
+      toast.error('Failed to pin message');
+    }
+  };
+
+  const handleSendFile = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await api.post(`/files/room/${roomId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setShowFileUploader(false);
+      toast.success('File sent!');
+    } catch (error) {
+      console.error('Failed to send file:', error);
+      toast.error('Failed to send file');
     }
   };
 
@@ -483,45 +431,6 @@ socket.off('message-pinned');
       </div>
     );
   }
-
-  const handlePin = async (messageId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `http://localhost:5000/api/messages/${messageId}/pin`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (error) {
-      console.error('Failed to pin message:', error);
-      toast.error('Failed to pin message');
-    }
-  };
-
-  const handleSendFile = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const token = localStorage.getItem('token');
-    await axios.post(
-      `http://localhost:5000/api/files/room/${roomId}`,
-      formData,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    );
-
-    setShowFileUploader(false);
-    toast.success('File sent!');
-  } catch (error) {
-    console.error('Failed to send file:', error);
-    toast.error('Failed to send file');
-  }
-};
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -561,11 +470,7 @@ socket.off('message-pinned');
             <Button variant="ghost" size="icon">
               <Info className="w-5 h-5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setShowSearch(true)}
-            >
+            <Button variant="ghost" size="icon" onClick={() => setShowSearch(true)}>
               <Search className="w-5 h-5" />
             </Button>
             
@@ -595,10 +500,8 @@ socket.off('message-pinned');
         </AnimatePresence>
 
         <div className="max-w-4xl mx-auto space-y-4">
-
           <AnimatePresence>
             {messages.map((message, index) => {
-              // Skip system messages for ownership check
               if (message.type === 'system') {
                 return (
                   <MessageBubble
@@ -610,35 +513,27 @@ socket.off('message-pinned');
                 );
               }
               
-              // DEBUG: Log each message to see what we're getting
               const messageUserId = message.userId || message.sender?._id || message.sender;
               const currentUserId = user?.id;
               const isOwn = messageUserId === currentUserId;
               
-              if (index === messages.length - 1) { // Only log last message to avoid spam
-                console.log('💬 Last message userId:', messageUserId);
-                console.log('💬 Current user ID:', currentUserId);
-                console.log('💬 Are they equal?', isOwn);
-                console.log('💬 Message userName:', message.userName || message.senderName);
-              }
-              
               return (
                 <MessageBubble
-                    key={message._id || index}
-                    message={message}
-                    isOwn={isOwn}
-                    showAvatar={
+                  key={message._id || index}
+                  message={message}
+                  isOwn={isOwn}
+                  showAvatar={
                     index === 0 ||
                     messages[index - 1].userId !== message.userId
-                    }
-                    onEdit={handleEdit}       
-                    onDelete={handleDelete}   
-                    onCopy={handleCopy}       
-                    onReact={handleReact}     
-                    onPin={handlePin}         
-                    currentUserId={user?.id}  
+                  }
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onCopy={handleCopy}
+                  onReact={handleReact}
+                  onPin={handlePin}
+                  currentUserId={user?.id}
                 />
-                );
+              );
             })}
           </AnimatePresence>
           <div ref={messagesEndRef} />
@@ -647,121 +542,111 @@ socket.off('message-pinned');
 
       {/* Input Area */}
       <div className="border-t bg-white dark:bg-card p-4">
-       {showFileUploader && (
-            <FileUploader
+        {showFileUploader && (
+          <FileUploader
             onUpload={handleSendFile}
             onCancel={() => setShowFileUploader(false)}
-            />
-        )} 
+          />
+        )}
 
-        <form onSubmit={editingMessage ? handleSaveEdit : handleSendMessage} className="max-w-4xl mx-auto"> 
-        {showVoiceRecorder ? (
+        <form onSubmit={editingMessage ? handleSaveEdit : handleSendMessage} className="max-w-4xl mx-auto">
+          {showVoiceRecorder ? (
             <VoiceRecorder
-            onSend={handleSendVoiceMessage}
-            onCancel={() => setShowVoiceRecorder(false)}
+              onSend={handleSendVoiceMessage}
+              onCancel={() => setShowVoiceRecorder(false)}
             />
-        ) : editingMessage ? (
-            // Editing Mode
+          ) : editingMessage ? (
             <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex-1">
+              <div className="flex-1">
                 <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
-                Editing message
+                  Editing message
                 </div>
                 <Input
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="flex-1"
-                autoFocus
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="flex-1"
+                  autoFocus
                 />
-            </div>
-            <Button type="button" variant="ghost" onClick={handleCancelEdit}>
+              </div>
+              <Button type="button" variant="ghost" onClick={handleCancelEdit}>
                 Cancel
-            </Button>
-            <Button type="submit" disabled={!editText.trim()} className="bg-blue-600 hover:bg-blue-700">
+              </Button>
+              <Button type="submit" disabled={!editText.trim()} className="bg-blue-600 hover:bg-blue-700">
                 Save
-            </Button>
+              </Button>
             </div>
-        ) : (
-            // Normal Mode
+          ) : (
             <div className="flex items-center gap-3">
-            <Button
+              <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowVoiceRecorder(true)}
                 disabled={!connected}
                 className="flex-shrink-0"
-            >
+              >
                 <Mic className="w-5 h-5" />
-            </Button>
+              </Button>
 
-            <Button
+              <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowFileUploader(true)}
                 disabled={!connected}
                 className="flex-shrink-0"
-            >
+              >
                 <Paperclip className="w-5 h-5" />
-            </Button>
+              </Button>
 
-            <Input
+              <Input
                 value={newMessage}
                 onChange={handleTyping}
                 placeholder="Type a message..."
                 className="flex-1"
                 disabled={!connected}
-            />
+              />
 
-            <Button
+              <Button
                 type="submit"
                 disabled={!newMessage.trim() || !connected}
                 className="bg-forest hover:bg-forest/90 flex-shrink-0"
-            >
+              >
                 <Send className="w-5 h-5" />
-            </Button>
+              </Button>
             </div>
-        )}
+          )}
         </form>
       </div>
     </div>
   );
 };
 
-// Message Bubble Component
+// Message Bubble Component (keeping the same as before)
 const MessageBubble = ({ 
-    message, 
-    isOwn, 
-    showAvatar,
-    onEdit,      
-    onDelete,    
-    onCopy,      
-    onReact, 
-    onPin,    
-    currentUserId 
-    }) => {
+  message, 
+  isOwn, 
+  showAvatar,
+  onEdit,      
+  onDelete,    
+  onCopy,      
+  onReact, 
+  onPin,    
+  currentUserId 
+}) => {
+  const avatarColor = getAvatarColor(message.userId);
+  const initials = getInitials(message.userName || message.senderName);
 
-    const avatarColor = getAvatarColor(message.userId);
-    const initials = getInitials(message.userName || message.senderName);
-
-    // System messages (user joined/left)
-    if (message.type === 'system') {
+  if (message.type === 'system') {
     return (
-        <div className="flex justify-center">
+      <div className="flex justify-center">
         <span className="text-xs text-text-light bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full">
-            {message.content}
+          {message.content}
         </span>
-        </div>
+      </div>
     );
-    // DEBUG: Check if reactions exist
-
   }
-    if (message.type === 'text') {
-        console.log('🎨 Message:', message.content?.substring(0, 20), 'Reactions:', message.reactions);
-    }
-  // Regular chat messages
-  // Handle audio messages
+
   if (message.type === 'audio') {
     return (
       <motion.div
@@ -769,7 +654,6 @@ const MessageBubble = ({
         animate={{ opacity: 1, y: 0 }}
         className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
       >
-        {/* Avatar */}
         {showAvatar && !isOwn && (
           <Avatar className="w-8 h-8 flex-shrink-0">
             <AvatarFallback className="bg-forest text-white text-sm">
@@ -779,7 +663,6 @@ const MessageBubble = ({
         )}
         {!showAvatar && !isOwn && <div className="w-8" />}
 
-        {/* Audio Player */}
         <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
           {showAvatar && !isOwn && (
             <span className="text-xs text-text-light mb-1">
@@ -788,7 +671,7 @@ const MessageBubble = ({
           )}
           
           <AudioPlayer
-            audioUrl={`http://localhost:5000${message.audioUrl}`}
+            audioUrl={`${import.meta.env.VITE_SERVER_URL}${message.audioUrl}`}
             duration={message.duration || 0}
             waveformData={message.waveformData || []}
             isOwn={isOwn}
@@ -805,138 +688,129 @@ const MessageBubble = ({
     );
   }
 
-  // File messages
-    if (message.type === 'file') {
+  if (message.type === 'file') {
     return (
-        <motion.div
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
-        >
-        {/* Avatar */}
+      >
         {showAvatar && !isOwn && (
-        <Avatar className="w-8 h-8 flex-shrink-0">
-          <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+          <Avatar className="w-8 h-8 flex-shrink-0">
+            <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
+              {initials}
+            </AvatarFallback>
+          </Avatar>
         )}
         {!showAvatar && !isOwn && <div className="w-8" />}
 
-        {/* File Preview */}
         <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-            {showAvatar && !isOwn && (
+          {showAvatar && !isOwn && (
             <span className="text-xs text-text-light mb-1">
-                {message.senderName || message.userName}
+              {message.senderName || message.userName}
             </span>
-            )}
-            
-            <FilePreview
+          )}
+          
+          <FilePreview
             fileUrl={message.fileUrl}
             fileName={message.fileName}
             fileType={message.fileType}
             fileSize={message.fileSize}
             mimeType={message.mimeType}
             isOwn={isOwn}
-            />
-            
-            <span className="text-xs text-text-light mt-1">
+          />
+          
+          <span className="text-xs text-text-light mt-1">
             {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
+              hour: '2-digit',
+              minute: '2-digit'
             })}
-            </span>
+          </span>
         </div>
-        </motion.div>
+      </motion.div>
     );
   }
 
   return (
     <motion.div
-        id={`message-${message._id}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'} group`}
+      id={`message-${message._id}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'} group`}
     >
-        {/* Avatar */}
-        {showAvatar && !isOwn && (
+      {showAvatar && !isOwn && (
         <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
+          <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
             {initials?.[0] || message.userName?.[0] || 'U'}
-            </AvatarFallback>
+          </AvatarFallback>
         </Avatar>
-        )}
-        {!showAvatar && !isOwn && <div className="w-8" />}
-        
-        {/* Message Content */}
-        <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-md`}>
+      )}
+      {!showAvatar && !isOwn && <div className="w-8" />}
+      
+      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-md`}>
         {showAvatar && !isOwn && (
-            <span className="text-xs text-text-light mb-1">
+          <span className="text-xs text-text-light mb-1">
             {message.senderName || message.userName}
-            </span>
+          </span>
         )}
         
-        {/* Message Bubble with Actions */}
         <div className="relative">
-            <div
+          <div
             className={`rounded-2xl px-4 py-2 ${
-                isOwn
+              isOwn
                 ? 'bg-forest text-white rounded-tr-none'
                 : 'bg-white dark:bg-card border rounded-tl-none'
             }`}
-            >
+          >
             <p className="text-sm whitespace-pre-wrap break-words">
-                {message.content || message.message}
+              {message.content || message.message}
             </p>
             {message.isEdited && (
-                <span className="text-xs opacity-70 ml-2">(edited)</span>
+              <span className="text-xs opacity-70 ml-2">(edited)</span>
             )}
-            </div>
-            
-            {/* Actions Button */}
-            <div className={`absolute top-0 ${isOwn ? 'left-0 -translate-x-full -ml-2' : 'right-0 translate-x-full mr-2'}`}>
+          </div>
+          
+          <div className={`absolute top-0 ${isOwn ? 'left-0 -translate-x-full -ml-2' : 'right-0 translate-x-full mr-2'}`}>
             <MessageActions
-                message={message}
-                isOwn={isOwn}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onCopy={onCopy}
-                onPin={onPin}
+              message={message}
+              isOwn={isOwn}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onCopy={onCopy}
+              onPin={onPin}
             />
-            </div>
+          </div>
         </div>
         
-        {/* Reactions */}
         <MessageReactions
-            messageId={message._id}
-            reactions={message.reactions || {}}
-            onReact={onReact}
-            currentUserId={currentUserId}
-            isOwn={isOwn}
+          messageId={message._id}
+          reactions={message.reactions || {}}
+          onReact={onReact}
+          currentUserId={currentUserId}
+          isOwn={isOwn}
         />
 
-        {/* Timestamp with Read Receipts - REPLACE THE SPAN WITH THIS */}
         {isOwn ? (
-            <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-text-light">
-                    {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}
-                </span>
-                <ReadReceipts message={message} currentUserId={currentUserId} />
-            </div>
-        ) : (
-            <span className="text-xs text-text-light mt-1">
-                {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })}
+          <div className="flex items-center gap-1 mt-1">
+            <span className="text-xs text-text-light">
+              {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </span>
+            <ReadReceipts message={message} currentUserId={currentUserId} />
+          </div>
+        ) : (
+          <span className="text-xs text-text-light mt-1">
+            {new Date(message.timestamp || message.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </span>
         )}
-        </div>
+      </div>
     </motion.div>
-    );
+  );
 };
 
 export default RoomChatPage;

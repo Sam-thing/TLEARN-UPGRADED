@@ -1,28 +1,25 @@
+// src/pages/teach/TeachPage.jsx - FIXED VERSION
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Mic, 
   MicOff, 
-  Play, 
-  Pause, 
   Send, 
   BookOpen,
-  Clock,
   ArrowLeft,
   Lightbulb
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { topicService } from '@/services/topicService';
 import { sessionService } from '@/services/sessionService';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
-import axios from 'axios';
+import api from '@/utils/axios';
 
 const TeachPage = () => {
   const { topicId } = useParams();
@@ -65,7 +62,7 @@ const TeachPage = () => {
   const loadTopic = async () => {
     try {
       const data = await topicService.getById(topicId);
-      setTopic(data);
+      setTopic(data.topic || data);
     } catch (error) {
       toast.error('Failed to load topic');
       navigate('/topics');
@@ -75,12 +72,7 @@ const TeachPage = () => {
   const handleStartTeaching = async () => {
     // Track session start
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `http://localhost:5000/api/topics/${topicId}/start-session`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/topics/${topicId}/start-session`);
       console.log('✅ Session tracked');
     } catch (error) {
       console.error('Failed to track session:', error);
@@ -97,7 +89,6 @@ const TeachPage = () => {
     setTimerActive(false);
     stopRecording();
     stopListening();
-    // Move to feedback phase after stopping
     setPhase('feedback');
   };
 
@@ -108,7 +99,6 @@ const TeachPage = () => {
     }
 
     try {
-      // Save to localStorage as draft
       const draft = {
         topicId,
         topicName: topic?.name,
@@ -147,28 +137,23 @@ const TeachPage = () => {
       
       // Track completion
       try {
-        const token = localStorage.getItem('token');
-        await axios.post(
-          `http://localhost:5000/api/topics/${topicId}/complete`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.post(`/topics/${topicId}/complete`);
         console.log('✅ Completion tracked');
       } catch (error) {
         console.error('Failed to track completion:', error);
       }
       
-      // response structure: { session: {...} }
-      const sessionId = response.data?.session?._id || response.session?._id;
+      const sessionData = response.session || response;
+      const sessionId = sessionData._id;
       
       toast.success('Session completed! Getting your feedback...');
       setPhase('feedback');
       
-      // Navigate to session detail after 2 seconds
       setTimeout(() => {
         navigate(`/sessions/${sessionId}`);
       }, 2000);
     } catch (error) {
+      console.error('Submit error:', error);
       toast.error('Failed to submit session');
     } finally {
       setSubmitting(false);
@@ -191,19 +176,13 @@ const TeachPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/topics')}
-        >
+        <Button variant="ghost" size="sm" onClick={() => navigate('/topics')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Topics
         </Button>
       </div>
 
-      {/* Topic Info */}
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -216,12 +195,8 @@ const TeachPage = () => {
         </CardHeader>
       </Card>
 
-      {/* Main Content */}
       {phase === 'prep' && (
-        <PrepPhase 
-          topic={topic} 
-          onStart={handleStartTeaching} 
-        />
+        <PrepPhase topic={topic} onStart={handleStartTeaching} />
       )}
 
       {phase === 'teaching' && (
@@ -339,7 +314,6 @@ const TeachingPhase = ({ isRecording, transcript, timer, onStop, onSaveDraft }) 
 
   return (
     <div className="space-y-6">
-      {/* Recording Indicator */}
       <Card className="border-red-500">
         <CardContent className="p-8">
           <div className="flex flex-col items-center gap-6">
@@ -361,19 +335,11 @@ const TeachingPhase = ({ isRecording, transcript, timer, onStop, onSaveDraft }) 
               </div>
             </div>
 
-            <Button
-              size="lg"
-              variant="destructive"
-              onClick={onStop}
-            >
+            <Button size="lg" variant="destructive" onClick={onStop}>
               <MicOff className="w-5 h-5 mr-2" />
               Stop Teaching
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onSaveDraft}
-            >
+            <Button variant="outline" size="lg" onClick={onSaveDraft}>
               <BookOpen className="w-5 h-5 mr-2" />
               Save as Draft
             </Button>
@@ -381,7 +347,6 @@ const TeachingPhase = ({ isRecording, transcript, timer, onStop, onSaveDraft }) 
         </CardContent>
       </Card>
 
-      {/* Live Transcript */}
       <Card>
         <CardHeader>
           <CardTitle>Live Transcript</CardTitle>
@@ -413,7 +378,6 @@ const FeedbackPhase = ({ transcript, audioUrl, duration, onSubmit, submitting })
           <CardTitle>Review Your Teaching</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Audio Playback */}
           {audioUrl && (
             <div>
               <label className="text-sm font-medium mb-2 block">Audio Recording</label>
@@ -421,7 +385,6 @@ const FeedbackPhase = ({ transcript, audioUrl, duration, onSubmit, submitting })
             </div>
           )}
 
-          {/* Transcript */}
           <div>
             <label className="text-sm font-medium mb-2 block">Your Explanation</label>
             <div className="bg-muted rounded-lg p-4 max-h-[300px] overflow-y-auto">
@@ -431,7 +394,6 @@ const FeedbackPhase = ({ transcript, audioUrl, duration, onSubmit, submitting })
             </div>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
             <div>
               <div className="text-2xl font-bold text-forest">
@@ -447,7 +409,6 @@ const FeedbackPhase = ({ transcript, audioUrl, duration, onSubmit, submitting })
             </div>
           </div>
 
-          {/* Submit Button */}
           <Button
             onClick={onSubmit}
             disabled={submitting}
