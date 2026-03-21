@@ -1,12 +1,12 @@
 // src/services/roomService.js 
 import api from '@/utils/axios';
 
-const API_URL = 'api/rooms';
+const API_URL = '/rooms';  // ✅ FIXED - Added leading slash
 
 export const roomService = {
   // Get all rooms with optional filters
   async getAll(filters = {}) {
-    const response = await api.get('/rooms', { params: filters });
+    const response = await api.get(API_URL, { params: filters });
     return response.rooms || response;
   },
 

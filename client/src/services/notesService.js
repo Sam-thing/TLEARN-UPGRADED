@@ -1,7 +1,7 @@
 // src/services/notesService.js
 import api from '@/utils/axios';
 
-const API_URL = 'api/notes';  // ← Just the path!
+const API_URL = '/notes';  // ← Just the path!
 
 export const notesService = {
   // Get all notes
