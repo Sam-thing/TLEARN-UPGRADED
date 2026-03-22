@@ -1,4 +1,4 @@
-// src/components/NotificationBell.jsx
+// src/components/NotificationBell.jsx - FIXED (No ScrollArea dependency)
 import { useState, useEffect } from 'react';
 import { Bell, CheckCheck, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '@/contexts/SocketContext';
 import { notificationService } from '@/services/notificationService';
@@ -202,8 +201,8 @@ const NotificationBell = () => {
           </div>
         </div>
 
-        {/* Notifications List */}
-        <ScrollArea className="h-[400px]">
+        {/* Notifications List - Using overflow-y-auto instead of ScrollArea */}
+        <div className="max-h-[400px] overflow-y-auto">
           {notifications.length > 0 ? (
             <div className="divide-y">
               <AnimatePresence>
@@ -214,7 +213,7 @@ const NotificationBell = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     className={`
-                      flex items-start gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50 relative
+                      flex items-start gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50 relative group
                       ${!notification.read ? 'bg-green-50 dark:bg-green-950/20' : ''}
                     `}
                     onClick={() => handleNotificationClick(notification)}
@@ -268,7 +267,7 @@ const NotificationBell = () => {
               </p>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
