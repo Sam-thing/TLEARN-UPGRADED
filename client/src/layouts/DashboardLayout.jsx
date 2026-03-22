@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import NotificationBell from '@/components/NotificationBell';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {
   LayoutDashboard,
@@ -183,13 +184,10 @@ const DashboardLayout = () => {
               </button>
 
               {/* ADD LANGUAGE SWITCHER HERE! */}
-                <LanguageSwitcher />
+              <LanguageSwitcher />
 
               {/* Notifications */}
-              <button className="relative p-2 hover:bg-[oklch(0.96_0.004_240)] dark:hover:bg-[oklch(0.20_0.008_255)] rounded-lg transition-colors">
-                <Bell className="w-5 h-5 text-[oklch(0.36_0.010_255)] dark:text-[oklch(0.60_0.008_255)]" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[oklch(0.60_0.22_25)] rounded-full" />
-              </button>
+              <NotificationBell />
 
               {/* User Menu */}
               <DropdownMenu>

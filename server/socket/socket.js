@@ -131,3 +131,9 @@ export const getIO = () => {
   }
   return io;
 };
+
+// Handle personal notifications
+socket.on('authenticate', (userId) => {
+  socket.join(userId);
+  console.log(`👤 User ${userId} joined personal notification room`);
+});

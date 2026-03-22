@@ -6,19 +6,23 @@ import { io } from '../server.js'; // Import io from server
 class NotificationService {
   // Check if user has notification type enabled
   async isNotificationEnabled(userId, notificationType) {
-    const settings = await UserSettings.findOne({ user: userId });
-    
-    if (!settings) return true; // Default to enabled
-    
-    const typeMap = {
-      'session_completed': 'sessionReminders',
-      'goal_achieved': 'goalAchievements',
-      'room_invite': 'roomInvites',
-      'weekly_progress': 'weeklyProgress'
-    };
-    
-    const settingKey = typeMap[notificationType];
-    return settingKey ? settings.notifications[settingKey] : true;
+    try {
+      const settings = await UserSettings.findOne({ user: userId });
+      
+      if (!settings) return true; // Default to enabled
+      
+      const typeMap = {
+        'session_completed': 'sessionReminders',
+        'goal_achieved': 'goalAchievements',
+        'room_invite': 'roomInvites',
+        'weekly_progress': 'weeklyProgress'
+      };
+      
+      const settingKey = typeMap[notificationType];
+      return settingKey ? settings.notifications[settingKey] : true;
+    } catch (error) {
+      return true; // Default to enabled on error
+    }
   }
 
   // Create and send notification
@@ -71,7 +75,7 @@ class NotificationService {
       'goal_achieved',
       '🏆 Goal Achieved!',
       `Congratulations! You've achieved: ${goalName}`,
-      { achievementId }
+      { achievementId, url: '/progress' }
     );
   }
 
