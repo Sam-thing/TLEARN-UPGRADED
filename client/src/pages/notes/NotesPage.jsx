@@ -62,21 +62,33 @@ const NotesPage = () => {
 
   useEffect(() => {
     filterNotes();
-  }, [searchQuery, notes]);
+  }, [searchQuery, notes, selectedTags]);
 
   const loadNotes = async () => {
     try {
       const data = await notesService.getAll();
-      console.log('📊 Notes data:', data);
+      console.log('📊 Raw data from API:', data);
       console.log('Is array?', Array.isArray(data));
-      setNotes(Array.isArray(data) ? data : []);
+      
+      const notesArray = Array.isArray(data) ? data : [];
+      console.log('📝 Notes to set:', notesArray);
+      console.log('Notes count:', notesArray.length);
+      
+      setNotes(notesArray);
     } catch (error) {
+      console.error('❌ Error loading notes:', error);
       toast.error('Failed to load notes');
       setNotes([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    console.log('🔄 Notes changed:', notes.length);
+    console.log('🔄 Filtered notes:', filteredNotes.length);
+    filterNotes();
+  }, [searchQuery, notes, selectedTags]);
 
   const filterNotes = () => {
     let filtered = notes; 
