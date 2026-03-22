@@ -1,10 +1,12 @@
-// server/socket/socket.js - Socket.io Setup
+// server/socket/socket.js - FIXED VERSION
 import jwt from 'jsonwebtoken';
+import Room from '../models/Room.js';
+import notificationService from '../services/notificationService.js';
 
 let io;
 
-export const initializeSocket = (ioInstance) => {  // ← Accept io instance
-  io = ioInstance;  // ← Use passed instance, don't create new one
+export const initializeSocket = (ioInstance) => {
+  io = ioInstance;
 
   // Authentication middleware
   io.use((socket, next) => {
@@ -16,20 +18,14 @@ export const initializeSocket = (ioInstance) => {  // ← Accept io instance
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('🔑 Decoded JWT token:', decoded);
       
       socket.userId = decoded.id || decoded._id || decoded.userId;
       socket.userName = decoded.name || decoded.username || decoded.fullName || decoded.firstName || 'User';
       
-      console.log('👤 Socket user set:', {
+      console.log('👤 Socket user authenticated:', {
         userId: socket.userId,
-        userName: socket.userName,
-        availableFields: Object.keys(decoded)
+        userName: socket.userName
       });
-      
-      if (!socket.userName || socket.userName === 'User') {
-        console.warn('⚠️ WARNING: userName not found in JWT token! Available fields:', Object.keys(decoded));
-      }
       
       next();
     } catch (error) {
@@ -41,7 +37,13 @@ export const initializeSocket = (ioInstance) => {  // ← Accept io instance
   io.on('connection', (socket) => {
     console.log(`✅ User connected: ${socket.userName} (${socket.userId})`);
 
-    // Join room
+    // ✅ AUTHENTICATE - Join personal notification room
+    socket.on('authenticate', (userId) => {
+      socket.join(userId);
+      console.log(`🔔 User ${userId} joined personal notification room`);
+    });
+
+    // Join chat room
     socket.on('join-room', (roomId) => {
       socket.join(roomId);
       socket.currentRoom = roomId;
@@ -75,9 +77,10 @@ export const initializeSocket = (ioInstance) => {  // ← Accept io instance
     });
 
     // Send message
-    socket.on('send-message', (data) => {
+    socket.on('send-message', async (data) => {
       const { roomId, message } = data;
       
+      // Broadcast message to room
       io.to(roomId).emit('receive-message', {
         _id: Date.now().toString(),
         userId: socket.userId,
@@ -86,6 +89,27 @@ export const initializeSocket = (ioInstance) => {  // ← Accept io instance
         timestamp: new Date(),
         pending: true
       });
+
+      // Notify other room members about new message
+      try {
+        const room = await Room.findById(roomId).populate('members', 'name');
+        
+        if (room) {
+          for (const member of room.members) {
+            if (member._id.toString() !== socket.userId) {
+              await notificationService.roomMessage(
+                member._id,
+                roomId,
+                room.name,
+                socket.userName,
+                message.substring(0, 50) // First 50 chars
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to send message notifications:', error);
+      }
     });
 
     // Typing indicator
@@ -131,9 +155,3 @@ export const getIO = () => {
   }
   return io;
 };
-
-// Handle personal notifications
-socket.on('authenticate', (userId) => {
-  socket.join(userId);
-  console.log(`👤 User ${userId} joined personal notification room`);
-});

@@ -2,6 +2,7 @@
 import Session from '../models/Session.js';
 import Topic   from '../models/Topic.js';
 import User    from '../models/User.js';
+import notificationService from '../services/notificationService.js';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
 import { analyseSession } from '../services/claudeService.js';
 
@@ -35,6 +36,16 @@ export const createSession = catchAsync(async (req, res) => {
       wordsPerMin: duration ? Math.round(transcript.split(/\s+/).length / (duration / 60)) : 0
     }
   });
+
+  if (session.feedback?.score) {
+    const topic = await Topic.findById(topicId);
+    await notificationService.sessionCompleted(
+      req.user.id,
+      session._id,
+      session.feedback.score,
+      topic.name
+    );
+  }
 
   // Analyse with Claude
   try {

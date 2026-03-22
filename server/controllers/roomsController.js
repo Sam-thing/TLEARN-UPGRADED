@@ -1,5 +1,6 @@
 // controllers/roomsController.js
 import Room  from '../models/Room.js';
+import notificationService from '../services/notificationService.js';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
 
 // GET /api/rooms
@@ -87,6 +88,16 @@ export const joinRoom = catchAsync(async (req, res) => {
   room.members.push({ user: req.user._id });
   await room.save();
   await room.populate('topic', 'name subject');
+
+    // Notify existing members about the new user
+    if (room.createdBy.toString() !== req.user.id) {
+    await notificationService.roomInvite(
+      room.createdBy,  // Notify room creator
+      room._id,
+      room.name,
+      req.user.name    // Person who joined
+    );
+  }
 
   res.json({ room });
 });
