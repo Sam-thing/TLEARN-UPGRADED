@@ -20,4 +20,19 @@ api.interceptors.request.use(
   }
 );
 
+// Response interceptor
+api.interceptors.response.use(
+  (response) => response.data,  // ← Extract .data automatically
+  (error) => {
+    if (error.response?.status === 401) {
+      if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+    }
+    return Promise.reject(error.response?.data || error);
+  }
+);
+
 export default api;

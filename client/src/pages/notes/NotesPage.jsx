@@ -67,16 +67,25 @@ const NotesPage = () => {
   const loadNotes = async () => {
     try {
       const data = await notesService.getAll();
-      console.log('📊 Raw data from API:', data);
-      console.log('Is array?', Array.isArray(data));
+      console.log('📊 Type of data:', typeof data);
+      console.log('📊 Is array?', Array.isArray(data));
+      console.log('📊 data.notes exists?', !!data.notes);
+      console.log('📊 Full data:', data);
       
-      const notesArray = Array.isArray(data) ? data : [];
-      console.log('📝 Notes to set:', notesArray);
-      console.log('Notes count:', notesArray.length);
+      // Handle both formats
+      let notesArray;
+      if (Array.isArray(data)) {
+        notesArray = data;
+      } else if (data.notes && Array.isArray(data.notes)) {
+        notesArray = data.notes;
+      } else {
+        notesArray = [];
+      }
       
+      console.log('📝 Final notes array:', notesArray);
       setNotes(notesArray);
     } catch (error) {
-      console.error('❌ Error loading notes:', error);
+      console.error('❌ Error:', error);
       toast.error('Failed to load notes');
       setNotes([]);
     } finally {

@@ -4,10 +4,16 @@ import api from '@/utils/axios';
 const API_URL = '/notes';  // ← Just the path!
 
 export const notesService = {
-  // Get all notes
+  // src/services/notesService.js
   async getAll() {
     const response = await api.get(API_URL);
-    return response.notes || response;  // ← Extract .notes
+    console.log('🔍 notesService response:', response);
+    
+    // Extract .notes if it exists, otherwise treat response as array
+    const notes = response.notes || response;
+    console.log('✅ Extracted notes:', notes);
+    
+    return Array.isArray(notes) ? notes : [];
   },
 
   // Get single note
