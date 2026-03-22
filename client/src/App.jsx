@@ -36,67 +36,67 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
-    <ThemeProvider>
-      <Router>
-        <ErrorBoundary>
-        <AuthProvider>
-          <SocketProvider>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              
-              {/* Auth Routes */}
-              <Route element={<AuthLayout />}>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-              </Route>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <Router>
+          <AuthProvider>
+            <SocketProvider>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage />} />
+                
+                {/* Auth Routes */}
+                <Route element={<AuthLayout />}>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                </Route>
 
-              {/* Protected Routes - Dashboard Layout */}
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                
-                {/* Topics */}
-                <Route path="/topics" element={<TopicsPage />} />
-                <Route path="/topics/:id" element={<TopicDetailPage />} />
-                
-                {/* Teaching */}
-                <Route path="/teach/:topicId" element={<TeachPage />} />
-                
-                {/* Sessions */}
-                {/* <Route path="/sessions" element={<SessionHistoryPage />} /> */}
-                <Route path="/sessions" element={<SessionsPage />} />
-                <Route path="/sessions/:id" element={<SessionDetailPage />} />
-                
-                {/* Notes */}
-                <Route path="/notes" element={<NotesPage />} />
-                
-                {/* Study Rooms */}
-                <Route path="/rooms" element={<RoomPage />} />
-                <Route path="/rooms/:roomId" element={<RoomChatPage />} /> {/* ← Chat room */}
-                
-                {/* Progress */}
-                <Route path="/progress" element={<ProgressPage />} />
-                
-                {/* Profile & Settings */}
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Route>
+                {/* Protected Routes - Dashboard Layout */}
+                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  
+                  {/* Topics */}
+                  <Route path="/topics" element={<TopicsPage />} />
+                  <Route path="/topics/:id" element={<TopicDetailPage />} />
+                  
+                  {/* Teaching */}
+                  <Route path="/teach/:topicId" element={<TeachPage />} />
+                  
+                  {/* Sessions */}
+                  {/* <Route path="/sessions" element={<SessionHistoryPage />} /> */}
+                  <Route path="/sessions" element={<SessionsPage />} />
+                  <Route path="/sessions/:id" element={<SessionDetailPage />} />
+                  
+                  {/* Notes */}
+                  <Route path="/notes" element={<NotesPage />} />
+                  
+                  {/* Study Rooms */}
+                  <Route path="/rooms" element={<RoomPage />} />
+                  <Route path="/rooms/:roomId" element={<RoomChatPage />} /> {/* ← Chat room */}
+                  
+                  {/* Progress */}
+                  <Route path="/progress" element={<ProgressPage />} />
+                  
+                  {/* Profile & Settings */}
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
 
-              {/* 404 Redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                {/* 404 Redirect */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
 
-            {/* Toast Notifications */}
-            <Toaster 
-              position="top-right"
-              richColors
-              closeButton
-            />
-          </SocketProvider> {/* ← Close here */}
-        </AuthProvider>
-        </ErrorBoundary>
-      </Router>
-    </ThemeProvider>
+              {/* Toast Notifications */}
+              <Toaster 
+                position="top-right"
+                richColors
+                closeButton
+              />
+            </SocketProvider> {/* ← Close here */}
+          </AuthProvider>
+        </Router>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
