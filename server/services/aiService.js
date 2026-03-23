@@ -94,7 +94,7 @@ Please analyze this teaching session and provide feedback in this exact JSON for
    */
   async generateNotes(topicName, subject = '', additionalContext = '') {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const prompt = `Create comprehensive study notes for: "${topicName}"${subject ? ` in ${subject}` : ''}
 
