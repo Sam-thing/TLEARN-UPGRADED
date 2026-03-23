@@ -1,6 +1,7 @@
 // controllers/notesController.js
 import Note  from '../models/Note.js';
 import Topic from '../models/Topic.js';
+import aiService from '../services/aiService.js';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
 import { generateStudyNotes } from '../services/claudeService.js';
 
@@ -47,29 +48,35 @@ export const createNote = catchAsync(async (req, res) => {
 });
 
 // POST /api/notes/generate
-export const generateNotes = catchAsync(async (req, res) => {
-  const { topicId } = req.body;
-
-  const topic = await Topic.findById(topicId);
-  if (!topic) throw new AppError('Topic not found', 404);
-
-  const generated = await generateStudyNotes({
-    topicName:  topic.name,
-    subject:    topic.subject,
-    keyPoints:  topic.keyPoints
-  });
-
-  const note = await Note.create({
-    user:          req.user._id,
-    topic:         topicId,
-    title:         generated.title,
-    content:       generated.content,
-    type:          'generated',
-    generatedFrom: `AI-generated for: ${topic.name}`
-  });
-
-  res.status(201).json({ note });
-});
+export const generateNotes = async (req, res) => {
+  try {
+    const { topicId } = req.body;
+    
+    // Get topic
+    const topic = await Topic.findById(topicId);
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+    
+    // Generate notes with AI
+    const aiNotes = await aiService.generateNotes(topic.name, topic.subject);
+    
+    // Save to database
+    const note = await Note.create({
+      user: req.user._id,
+      title: `${topic.name} - AI Generated`,
+      content: aiNotes.content,
+      type: 'generated',
+      topic: topicId,
+      tags: ['AI-generated', topic.subject]
+    });
+    
+    res.status(201).json({ note, content: aiNotes.content });
+  } catch (error) {
+    console.error('Error generating notes:', error);
+    res.status(500).json({ message: error.message || 'Failed to generate notes' });
+  }
+};
 
 // PATCH /api/notes/:id
 export const updateNote = catchAsync(async (req, res) => {
