@@ -2,90 +2,109 @@
 import { Router } from 'express';
 import aiService from '../services/aiService.js';
 import { protect } from '../middleware/auth.js';
+import { catchAsync } from '../middleware/errorHandler.js';
 
 const router = Router();
+
+// All AI routes require authentication
 router.use(protect);
 
-// POST /api/ai/fix-punctuation - Fix punctuation in transcript
-router.post('/fix-punctuation', async (req, res) => {
-  try {
-    const { transcript } = req.body;
-    
-    if (!transcript) {
-      return res.status(400).json({ message: 'Transcript is required' });
-    }
-    
-    const corrected = await aiService.fixPunctuation(transcript);
-    
-    res.json({ corrected });
-  } catch (error) {
-    console.error('Error fixing punctuation:', error);
-    res.status(500).json({ message: 'Failed to fix punctuation' });
-  }
-});
+/**
+ * POST /api/ai/punctuate
+ * Add punctuation to text
+ */
+router.post('/punctuate', catchAsync(async (req, res) => {
+  const { text } = req.body;
 
-// POST /api/ai/feedback - Generate AI feedback
-router.post('/feedback', async (req, res) => {
-  try {
-    const { topicName, transcript, subject } = req.body;
-    
-    if (!topicName || !transcript) {
-      return res.status(400).json({ 
-        message: 'Topic name and transcript are required' 
-      });
-    }
-    
-    const feedback = await aiService.generateFeedback(
-      topicName, 
-      transcript, 
-      subject
-    );
-    
-    res.json({ feedback });
-  } catch (error) {
-    console.error('Error generating feedback:', error);
-    res.status(500).json({ message: 'Failed to generate feedback' });
+  if (!text) {
+    return res.status(400).json({ message: 'Text is required' });
   }
-});
 
-// POST /api/ai/generate-notes - Generate study notes
-router.post('/generate-notes', async (req, res) => {
-  try {
-    const { topicName, subject, context } = req.body;
-    
-    if (!topicName) {
-      return res.status(400).json({ message: 'Topic name is required' });
-    }
-    
-    const notes = await aiService.generateNotes(
-      topicName, 
-      subject, 
-      context
-    );
-    
-    res.json({ notes });
-  } catch (error) {
-    console.error('Error generating notes:', error);
-    res.status(500).json({ message: 'Failed to generate notes' });
-  }
-});
+  const correctedText = await aiService.addPunctuation(text);
 
-// POST /api/ai/summarize - Summarize text
-router.post('/summarize', async (req, res) => {
-  try {
-    const { text, maxWords } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ message: 'Text is required' });
-    }
-    
-    const summary = await aiService.generateSummary(text, maxWords);
-    
-    res.json({ summary });
-  } catch (error) {
-    console.error('Error generating summary:', error);
-    res.status(500).json({ message: 'Failed to generate summary' });
+  res.json({ 
+    original: text,
+    corrected: correctedText 
+  });
+}));
+
+/**
+ * POST /api/ai/feedback
+ * Generate feedback for teaching session
+ */
+router.post('/feedback', catchAsync(async (req, res) => {
+  const { topicName, transcript, subject } = req.body;
+
+  if (!topicName || !transcript) {
+    return res.status(400).json({ 
+      message: 'Topic name and transcript are required' 
+    });
   }
-});
+
+  if (transcript.length < 50) {
+    return res.status(400).json({ 
+      message: 'Transcript is too short for meaningful feedback' 
+    });
+  }
+
+  const feedback = await aiService.generateFeedback(topicName, transcript, subject);
+
+  res.json({ feedback });
+}));
+
+/**
+ * POST /api/ai/generate-notes
+ * Generate study notes for a topic
+ */
+router.post('/generate-notes', catchAsync(async (req, res) => {
+  const { topicName, subject, additionalContext } = req.body;
+
+  if (!topicName) {
+    return res.status(400).json({ message: 'Topic name is required' });
+  }
+
+  const notes = await aiService.generateNotes(topicName, subject, additionalContext);
+
+  res.json({ notes });
+}));
+
+/**
+ * POST /api/ai/generate-questions
+ * Generate practice questions for a topic
+ */
+router.post('/generate-questions', catchAsync(async (req, res) => {
+  const { topicName, subject, difficulty = 'medium', count = 5 } = req.body;
+
+  if (!topicName) {
+    return res.status(400).json({ message: 'Topic name is required' });
+  }
+
+  const questions = await aiService.generateQuestions(
+    topicName, 
+    subject, 
+    difficulty, 
+    Math.min(count, 10) // Max 10 questions
+  );
+
+  res.json({ questions });
+}));
+
+/**
+ * POST /api/ai/analyze-coverage
+ * Analyze what topics were covered in transcript
+ */
+router.post('/analyze-coverage', catchAsync(async (req, res) => {
+  const { transcript, expectedTopic } = req.body;
+
+  if (!transcript || !expectedTopic) {
+    return res.status(400).json({ 
+      message: 'Transcript and expected topic are required' 
+    });
+  }
+
+  const analysis = await aiService.analyzeTopicsCovered(transcript, expectedTopic);
+
+  res.json({ analysis });
+}));
 
 export default router;

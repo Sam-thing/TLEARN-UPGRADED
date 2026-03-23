@@ -6,7 +6,7 @@ export const aiService = {
    * Add punctuation to text
    */
   async addPunctuation(text) {
-    const response = await api.post('/ai/fix-punctuate', { text });
+    const response = await api.post('/ai/punctuate', { text });  // ✅ Fixed endpoint
     return response.corrected;
   },
 
