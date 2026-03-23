@@ -1,179 +1,223 @@
-// controllers/sessionsController.js
+// server/controllers/sessionsController.js
 import Session from '../models/Session.js';
-import Topic   from '../models/Topic.js';
-import User    from '../models/User.js';
+import Topic from '../models/Topic.js';
+import User from '../models/User.js';
+import aiService from '../services/aiService.js';
 import notificationService from '../services/notificationService.js';
-import { catchAsync, AppError } from '../middleware/errorHandler.js';
-import { analyseSession } from '../services/claudeService.js';
+import { checkMilestones } from './progressController.js';
+import { catchAsync } from '../middleware/errorHandler.js';
 
-// POST /api/sessions
+/**
+ * POST /api/sessions
+ * Create a new teaching session with AI feedback
+ */
 export const createSession = catchAsync(async (req, res) => {
-  const { topicId, transcript, duration } = req.body;
+  const { topicId, transcript, duration, audioUrl } = req.body;
 
-  if (!transcript || transcript.trim().length < 20) {
-    throw new AppError('Transcript is too short to analyse', 400);
+  if (!topicId || !transcript) {
+    return res.status(400).json({ 
+      message: 'Topic ID and transcript are required' 
+    });
   }
 
+  // Get topic details
   const topic = await Topic.findById(topicId);
-  if (!topic) throw new AppError('Topic not found', 404);
-
-  // Handle audio file
-  let audioUrl = '';
-  if (req.file) {
-    audioUrl = `/uploaded/${req.file.filename}`;
+  if (!topic) {
+    return res.status(404).json({ message: 'Topic not found' });
   }
 
-  // Create session first (status: pending)
+  // ✅ STEP 1: Add punctuation to transcript
+  const correctedTranscript = await aiService.addPunctuation(transcript);
+
+  // ✅ STEP 2: Generate AI feedback
+  const feedback = await aiService.generateFeedback(
+    topic.name,
+    correctedTranscript,
+    topic.subject
+  );
+
+  // ✅ STEP 3: Analyze topic coverage
+  const coverage = await aiService.analyzeTopicsCovered(
+    correctedTranscript,
+    topic.name
+  );
+
+  // Create session with AI feedback
   const session = await Session.create({
-    user:  req.user._id,
+    user: req.user._id,
     topic: topicId,
-    transcript,
-    duration: Number(duration) || 0,
+    transcript: correctedTranscript, // Save corrected version
+    originalTranscript: transcript, // Keep original too
+    duration: duration || 0,
     audioUrl,
+    feedback: {
+      score: feedback.score,
+      strengths: feedback.strengths,
+      improvements: feedback.improvements,
+      summary: feedback.summary,
+      aiModel: feedback.model
+    },
     analysis: {
-      wordCount:   transcript.split(/\s+/).length,
-      fillerWords: countFillerWords(transcript),
-      wordsPerMin: duration ? Math.round(transcript.split(/\s+/).length / (duration / 60)) : 0
-    }
+      topicsCovered: coverage.topicsCovered,
+      missingTopics: coverage.missingTopics,
+      coveragePercentage: coverage.coveragePercentage
+    },
+    status: 'analyzed'
   });
 
-  if (session.feedback?.score) {
-    const topic = await Topic.findById(topicId);
-    await notificationService.sessionCompleted(
-      req.user.id,
-      session._id,
-      session.feedback.score,
-      topic.name
-    );
+  // ✅ STEP 4: Update user stats
+  const user = await User.findById(req.user._id);
+  user.stats.totalSessions += 1;
+  user.stats.totalMinutes += duration || 0;
+  
+  // Update average score
+  const allSessions = await Session.find({ user: req.user._id, status: 'analyzed' });
+  const totalScore = allSessions.reduce((sum, s) => sum + s.feedback.score, 0);
+  user.stats.averageScore = Math.round(totalScore / allSessions.length);
+  
+  // Update streak
+  const today = new Date().toISOString().split('T')[0];
+  const lastSessionDate = user.stats.lastSessionDate?.toISOString().split('T')[0];
+  
+  if (lastSessionDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    if (lastSessionDate === yesterday) {
+      user.streak.current += 1;
+    } else {
+      user.streak.current = 1;
+    }
+    user.streak.longest = Math.max(user.streak.longest, user.streak.current);
   }
+  
+  user.stats.lastSessionDate = new Date();
+  await user.save();
 
-  // Analyse with Claude
-  try {
-    const feedback = await analyseSession({
-      transcript,
-      topicName:  topic.name,
-      keyPoints:  topic.keyPoints
-    });
+  // ✅ STEP 5: Send notification
+  await notificationService.sessionCompleted(
+    req.user._id,
+    session._id,
+    feedback.score,
+    topic.name
+  );
 
-    session.feedback = feedback;
-    session.status   = 'analyzed';
-    await session.save();
+  // ✅ STEP 6: Check for milestone achievements
+  await checkMilestones(req.user._id);
 
-    // Update user stats & streak
-    await updateUserStats(req.user._id, feedback.score);
+  // Populate topic details for response
+  await session.populate('topic', 'name subject');
 
-    // Update topic stats
-    await updateTopicStats(topicId, feedback.score);
-
-  } catch (err) {
-    console.error('Claude analysis failed:', err.message);
-    session.status = 'failed';
-    await session.save();
-  }
-
-  // Populate topic before returning
-  await session.populate('topic', 'name subject difficulty');
-
-  res.status(201).json({ session });
+  res.status(201).json({ 
+    session,
+    message: 'Session analyzed successfully'
+  });
 });
 
-// GET /api/sessions
+/**
+ * GET /api/sessions
+ * Get all sessions for current user
+ */
 export const getSessions = catchAsync(async (req, res) => {
-  const { page = 1, limit = 20, topic, minScore, maxScore } = req.query;
+  const { limit = 20, status } = req.query;
 
   const filter = { user: req.user._id };
-  if (topic)    filter.topic = topic;
-  if (minScore || maxScore) {
-    filter['feedback.score'] = {};
-    if (minScore) filter['feedback.score'].$gte = Number(minScore);
-    if (maxScore) filter['feedback.score'].$lte = Number(maxScore);
-  }
+  if (status) filter.status = status;
 
   const sessions = await Session.find(filter)
-    .populate('topic', 'name subject difficulty')
-    .sort({ createdAt: -1 })
-    .limit(Number(limit))
-    .skip((Number(page) - 1) * Number(limit));
-
-  const total = await Session.countDocuments(filter);
-
-  res.json({ sessions, total, page: Number(page) });
-});
-
-// GET /api/sessions/recent
-export const getRecentSessions = catchAsync(async (req, res) => {
-  const { limit = 5 } = req.query;
-
-  const sessions = await Session.find({ user: req.user._id })
     .populate('topic', 'name subject')
     .sort({ createdAt: -1 })
-    .limit(Number(limit));
+    .limit(parseInt(limit));
 
   res.json({ sessions });
 });
 
-// GET /api/sessions/stats
-export const getSessionStats = catchAsync(async (req, res) => {
-  const user = await User.findById(req.user._id);
-  res.json({
-    totalSessions:  user.stats.totalSessions,
-    averageScore:   user.stats.averageScore,
-    topicsExplored: user.stats.topicsExplored,
-    totalDuration:  user.stats.totalDuration,
-    streak:         user.streak
-  });
-});
+/**
+ * GET /api/sessions/:id
+ * Get single session by ID
+ */
+export const getSessionById = catchAsync(async (req, res) => {
+  const session = await Session.findOne({
+    _id: req.params.id,
+    user: req.user._id
+  }).populate('topic', 'name subject description');
 
-// GET /api/sessions/:id
-export const getSession = catchAsync(async (req, res) => {
-  const session = await Session.findOne({ _id: req.params.id, user: req.user._id })
-    .populate('topic', 'name subject difficulty keyPoints');
-  if (!session) throw new AppError('Session not found', 404);
+  if (!session) {
+    return res.status(404).json({ message: 'Session not found' });
+  }
+
   res.json({ session });
 });
 
-// DELETE /api/sessions/:id
+/**
+ * DELETE /api/sessions/:id
+ * Delete a session
+ */
 export const deleteSession = catchAsync(async (req, res) => {
-  const session = await Session.findOneAndDelete({ _id: req.params.id, user: req.user._id });
-  if (!session) throw new AppError('Session not found', 404);
-  res.json({ message: 'Session deleted' });
+  const session = await Session.findOneAndDelete({
+    _id: req.params.id,
+    user: req.user._id
+  });
+
+  if (!session) {
+    return res.status(404).json({ message: 'Session not found' });
+  }
+
+  // Update user stats
+  const user = await User.findById(req.user._id);
+  user.stats.totalSessions = Math.max(0, user.stats.totalSessions - 1);
+  user.stats.totalMinutes = Math.max(0, user.stats.totalMinutes - (session.duration || 0));
+  
+  // Recalculate average score
+  const remainingSessions = await Session.find({ 
+    user: req.user._id, 
+    status: 'analyzed' 
+  });
+  
+  if (remainingSessions.length > 0) {
+    const totalScore = remainingSessions.reduce((sum, s) => sum + s.feedback.score, 0);
+    user.stats.averageScore = Math.round(totalScore / remainingSessions.length);
+  } else {
+    user.stats.averageScore = 0;
+  }
+  
+  await user.save();
+
+  res.json({ message: 'Session deleted successfully' });
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+/**
+ * POST /api/sessions/:id/regenerate-feedback
+ * Regenerate AI feedback for existing session
+ */
+export const regenerateFeedback = catchAsync(async (req, res) => {
+  const session = await Session.findOne({
+    _id: req.params.id,
+    user: req.user._id
+  }).populate('topic');
 
-const FILLER_WORDS = ['um', 'uh', 'like', 'you know', 'basically', 'literally', 'actually', 'sort of', 'kind of'];
+  if (!session) {
+    return res.status(404).json({ message: 'Session not found' });
+  }
 
-const countFillerWords = (text) => {
-  const lower = text.toLowerCase();
-  return FILLER_WORDS.reduce((count, word) => {
-    const regex = new RegExp(`\\b${word}\\b`, 'g');
-    return count + (lower.match(regex)?.length || 0);
-  }, 0);
-};
+  // Generate new feedback
+  const feedback = await aiService.generateFeedback(
+    session.topic.name,
+    session.transcript,
+    session.topic.subject
+  );
 
-const updateUserStats = async (userId, newScore) => {
-  const user = await User.findById(userId);
+  // Update session
+  session.feedback = {
+    score: feedback.score,
+    strengths: feedback.strengths,
+    improvements: feedback.improvements,
+    summary: feedback.summary,
+    aiModel: feedback.model
+  };
 
-  const prev      = user.stats.totalSessions;
-  const prevAvg   = user.stats.averageScore;
-  const newTotal  = prev + 1;
-  const newAvg    = Math.round((prevAvg * prev + newScore) / newTotal);
+  await session.save();
 
-  user.stats.totalSessions = newTotal;
-  user.stats.averageScore  = newAvg;
-  user.updateStreak();
-
-  await user.save({ validateBeforeSave: false });
-};
-
-const updateTopicStats = async (topicId, newScore) => {
-  const topic = await Topic.findById(topicId);
-  const prev  = topic.stats.totalSessions;
-  const avg   = topic.stats.averageScore;
-
-  topic.stats.totalSessions  = prev + 1;
-  topic.stats.averageScore   = Math.round((avg * prev + newScore) / (prev + 1));
-  topic.stats.popularity    += 2;
-
-  await topic.save({ validateBeforeSave: false });
-};
+  res.json({ 
+    session,
+    message: 'Feedback regenerated successfully'
+  });
+});

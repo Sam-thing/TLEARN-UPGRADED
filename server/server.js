@@ -23,6 +23,7 @@ import roomRoutes     from './routes/rooms.js';
 import notesRoutes    from './routes/notes.js';
 import progressRoutes from './routes/progress.js';
 import userRoutes from './routes/user.js';
+import aiRoutes from './routes/ai.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { setupSocket }  from './socket/index.js';
@@ -104,6 +105,7 @@ app.use('/api/topics',   topicRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/rooms',    roomRoutes);
 app.use('/api/notes',    notesRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/users',    userRoutes);
 app.use('/api/messages', messageRoutes); 

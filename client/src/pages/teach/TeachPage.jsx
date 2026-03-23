@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { topicService } from '@/services/topicService';
 import { sessionService } from '@/services/sessionService';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { aiService } from '@/services/aiService';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 import api from '@/utils/axios';
 
@@ -29,6 +30,7 @@ const TeachPage = () => {
   const [timer, setTimer] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [finalTranscript, setFinalTranscript] = useState('');
   
   const { 
     isRecording, 
@@ -42,7 +44,7 @@ const TeachPage = () => {
     transcript, 
     isListening, 
     startListening, 
-    stopListening 
+    stopListening,
   } = useSpeechToText();
 
   useEffect(() => {
@@ -85,10 +87,26 @@ const TeachPage = () => {
     startListening();
   };
 
-  const handleStopTeaching = () => {
+  const handleStopTeaching = async () => {
     setTimerActive(false);
     stopRecording();
     stopListening();
+  
+    // ✅ STEP 1: Add punctuation to transcript
+    if (transcript && transcript.trim().length > 0) {
+      try {
+        toast.loading('Processing transcript...');
+        const correctedTranscript = await aiService.addPunctuation(transcript);
+        setFinalTranscript(correctedTranscript);
+        toast.dismiss();
+        toast.success('Transcript processed!');
+      } catch (error) {
+        console.error('Punctuation failed:', error);
+        setFinalTranscript(transcript); // Use original if AI fails
+        toast.dismiss();
+      }
+    }
+    
     setPhase('feedback');
   };
 
@@ -120,25 +138,26 @@ const TeachPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!audioBlob || !transcript) {
+    const transcriptToUse = finalTranscript || transcript;
+    
+    if (!audioBlob || !transcriptToUse) {
       toast.error('Please record your explanation first');
       return;
     }
-
+ 
     setSubmitting(true);
     try {
       const formData = new FormData();
       formData.append('audio', audioBlob);
-      formData.append('transcript', transcript);
+      formData.append('transcript', transcriptToUse);  // ✅ Use corrected transcript
       formData.append('topicId', topicId);
       formData.append('duration', timer);
-
+ 
       const response = await sessionService.create(formData);
       
       // Track completion
       try {
         await api.post(`/topics/${topicId}/complete`);
-        console.log('✅ Completion tracked');
       } catch (error) {
         console.error('Failed to track completion:', error);
       }
@@ -147,7 +166,6 @@ const TeachPage = () => {
       const sessionId = sessionData._id;
       
       toast.success('Session completed! Getting your feedback...');
-      setPhase('feedback');
       
       setTimeout(() => {
         navigate(`/sessions/${sessionId}`);
@@ -211,7 +229,7 @@ const TeachPage = () => {
 
       {phase === 'feedback' && (
         <FeedbackPhase
-          transcript={transcript}
+          transcript={finalTranscript || transcript}
           audioUrl={audioUrl}
           duration={timer}
           onSubmit={handleSubmit}

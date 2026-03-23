@@ -11,7 +11,8 @@ import {
   Grid,
   List,
   Eye,
-  Pin
+  Pin,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,11 +41,13 @@ import { notesService } from '@/services/notesService';
 import { topicService } from '@/services/topicService';
 import RichTextEditor from '@/components/notes/RichTextEditor';
 import NoteViewer from '@/components/notes/NoteViewer';
+import { aiService } from '@/services/aiService';
 
 const NotesPage = () => {
   const [notes, setNotes] = useState([]);
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -98,6 +101,34 @@ const NotesPage = () => {
     console.log('🔄 Filtered notes:', filteredNotes.length);
     filterNotes();
   }, [searchQuery, notes, selectedTags]);
+
+   const handleGenerateNotes = async (topicId, topicName, subject) => {
+    try {
+      setGenerating(true);
+      toast.loading('Generating notes...');
+      
+      // ✅ Generate AI notes
+      const { content } = await aiService.generateNotes(topicName, subject);
+      
+      // Save to database
+      await notesService.create({
+        topic: topicId,
+        content,
+        tags: ['AI-generated', subject]
+      });
+      
+      toast.dismiss();
+      toast.success('Notes generated!');
+      
+      // Reload notes
+      loadNotes();
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to generate notes');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const filterNotes = () => {
     let filtered = notes; 
