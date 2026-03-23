@@ -1,4 +1,4 @@
-// server/services/aiService.js
+// server/services/aiService.js - COMPLETE FIXED VERSION
 import Groq from 'groq-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -10,227 +10,199 @@ const groq = new Groq({
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 class AIService {
-  // ============================================
-  // 1. FIX PUNCTUATION
-  // ============================================
-  async fixPunctuation(transcript) {
+  /**
+   * Add punctuation to transcript using AI
+   */
+  async addPunctuation(text) {  // ✅ RENAMED from fixPunctuation
     try {
-      console.log('🔧 Fixing punctuation for transcript...');
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
-      const prompt = `Add proper punctuation, capitalization, and paragraph breaks to this transcript. Keep the exact same words, just add punctuation. Return ONLY the corrected text with no additional commentary.
+      const prompt = `Add proper punctuation, capitalization, and paragraph breaks to this transcript. Return ONLY the corrected text, no explanations:
+
+${text}`;
+
+      const result = await model.generateContent(prompt);
+      const correctedText = result.response.text().trim();
+      
+      return correctedText;
+    } catch (error) {
+      console.error('Error adding punctuation:', error);
+      // Return original text if punctuation fails
+      return text;
+    }
+  }
+
+  /**
+   * Generate AI feedback for teaching session
+   */
+  async generateFeedback(topicName, transcript, subject = '') {
+    try {
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert education analyst. Evaluate teaching sessions and provide constructive feedback.
+            
+Your task:
+1. Score the explanation (0-100)
+2. Identify 3 key strengths
+3. Identify 3 areas for improvement
+4. Provide a brief summary
+
+Be encouraging but honest. Focus on clarity, accuracy, and completeness.`
+          },
+          {
+            role: "user",
+            content: `Topic: ${topicName}${subject ? `\nSubject: ${subject}` : ''}
 
 Transcript:
 ${transcript}
 
-Corrected version:`;
-
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-8b-instant',
-        temperature: 0.3,
-        max_tokens: 2000
-      });
-
-      const corrected = completion.choices[0]?.message?.content?.trim() || transcript;
-      console.log('✅ Punctuation fixed');
-      
-      return corrected;
-    } catch (error) {
-      console.error('❌ Punctuation fix failed:', error.message);
-      return transcript; // Return original if fails
-    }
-  }
-
-  // ============================================
-  // 2. GENERATE FEEDBACK
-  // ============================================
-  async generateFeedback(topicName, transcript, subject = 'General') {
-    try {
-      console.log(`🤖 Generating feedback for topic: ${topicName}`);
-      
-      const prompt = `You are an expert teacher evaluating a student's teaching session.
-
-**Topic:** ${topicName}
-**Subject:** ${subject}
-
-**Student's Teaching Transcript:**
-${transcript}
-
-Analyze this teaching session and provide detailed feedback in the following JSON format:
-
+Please analyze this teaching session and provide feedback in this exact JSON format:
 {
   "score": <number 0-100>,
-  "summary": "<brief 1-sentence overall assessment>",
-  "strengths": [
-    "<strength 1>",
-    "<strength 2>",
-    "<strength 3>"
-  ],
-  "improvements": [
-    "<area to improve 1>",
-    "<area to improve 2>",
-    "<area to improve 3>"
-  ],
-  "keyPoints": [
-    "<important concept covered>",
-    "<important concept covered>"
-  ],
-  "missingConcepts": [
-    "<concept that should have been covered>",
-    "<concept that should have been covered>"
-  ],
-  "clarity": <number 0-100>,
-  "accuracy": <number 0-100>,
-  "completeness": <number 0-100>
-}
-
-Return ONLY valid JSON, no markdown formatting or additional text.`;
-
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-70b-versatile', // More powerful model for better analysis
-        temperature: 0.5,
-        max_tokens: 2000
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "improvements": ["improvement 1", "improvement 2", "improvement 3"],
+  "summary": "brief summary of performance"
+}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
       });
 
-      const responseText = completion.choices[0]?.message?.content?.trim();
-      
-      // Remove markdown code blocks if present
-      const jsonText = responseText
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-      
-      const feedback = JSON.parse(jsonText);
-      
-      console.log(`✅ Feedback generated - Score: ${feedback.score}%`);
-      
-      return feedback;
-    } catch (error) {
-      console.error('❌ Feedback generation failed:', error.message);
-      
-      // Return fallback feedback
+      const feedbackText = completion.choices[0]?.message?.content;
+      const feedback = JSON.parse(feedbackText);
+
       return {
-        score: 70,
-        summary: 'Good effort! Keep practicing to improve your teaching skills.',
-        strengths: [
-          'You covered the main topic',
-          'Your explanation was clear',
-          'Good use of examples'
-        ],
-        improvements: [
-          'Add more specific details',
-          'Organize your points better',
-          'Include real-world applications'
-        ],
-        keyPoints: ['Main concept explained'],
-        missingConcepts: [],
-        clarity: 70,
-        accuracy: 70,
-        completeness: 70
+        score: Math.min(100, Math.max(0, feedback.score)),
+        strengths: feedback.strengths || [],
+        improvements: feedback.improvements || [],
+        summary: feedback.summary || '',
+        model: 'groq-llama-3.3-70b'
       };
+    } catch (error) {
+      console.error('Error generating feedback:', error);
+      throw new Error('Failed to generate AI feedback');
     }
   }
 
-  // ============================================
-  // 3. GENERATE NOTES
-  // ============================================
-  async generateNotes(topicName, subject = 'General', additionalContext = '') {
+  /**
+   * Generate comprehensive study notes for a topic
+   */
+  async generateNotes(topicName, subject = '', additionalContext = '') {
     try {
-      console.log(`📝 Generating notes for topic: ${topicName}`);
-      
-      const prompt = `Create comprehensive study notes for the following topic.
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-**Topic:** ${topicName}
-**Subject:** ${subject}
-${additionalContext ? `**Context:** ${additionalContext}` : ''}
+      const prompt = `Create comprehensive study notes for: "${topicName}"${subject ? ` in ${subject}` : ''}
 
-Generate detailed study notes in markdown format with the following structure:
+${additionalContext ? `Additional context: ${additionalContext}\n` : ''}
+Generate detailed, well-structured study notes in Markdown format.
 
-# ${topicName}
+Include:
+1. Overview/Introduction
+2. Key Concepts (with clear explanations)
+3. Important Details
+4. Examples
+5. Common Misconceptions (if applicable)
+6. Study Tips
 
-## Overview
-[Brief introduction to the topic]
+Use proper Markdown formatting with headers (##), bullet points, and emphasis.
+Make it comprehensive but clear and organized.`;
 
-## Key Concepts
-[Main concepts explained clearly]
-
-## Important Details
-[Detailed explanations with examples]
-
-## How It Works
-[Step-by-step processes or mechanisms]
-
-## Real-World Applications
-[Practical examples and use cases]
-
-## Common Misconceptions
-[Things people often get wrong]
-
-## Study Tips
-[How to remember and understand this topic]
-
-## Practice Questions
-[3-5 questions to test understanding]
-
-Make it comprehensive, clear, and easy to understand. Use bullet points, numbered lists, and examples where appropriate.`;
-
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const result = await model.generateContent(prompt);
       const notes = result.response.text();
-      
-      console.log('✅ Notes generated successfully');
-      
-      return notes;
+
+      return {
+        content: notes,
+        model: 'gemini-1.5-pro'
+      };
     } catch (error) {
-      console.error('❌ Notes generation failed:', error.message);
-      
-      // Return fallback notes
-      return `# ${topicName}
-
-## Overview
-This topic covers the fundamental concepts of ${topicName} in ${subject}.
-
-## Key Concepts
-- Main concept 1
-- Main concept 2
-- Main concept 3
-
-## Important Details
-[Detailed information about ${topicName}]
-
-## Study Tips
-- Review regularly
-- Practice with examples
-- Connect to real-world applications
-
-_Note: These are basic notes. Try regenerating for more detailed content._`;
+      console.error('Error generating notes:', error);
+      throw new Error('Failed to generate study notes');
     }
   }
 
-  // ============================================
-  // 4. QUICK SUMMARY
-  // ============================================
-  async generateSummary(text, maxWords = 100) {
+  /**
+   * Generate AI questions based on topic
+   */
+  async generateQuestions(topicName, subject = '', difficulty = 'medium', count = 5) {
     try {
-      const prompt = `Summarize the following text in ${maxWords} words or less. Be concise and capture the main points.
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-Text:
-${text}
+      const prompt = `Generate ${count} ${difficulty} difficulty questions about: "${topicName}"${subject ? ` in ${subject}` : ''}
 
-Summary:`;
+Return ONLY a JSON array of questions in this exact format:
+[
+  {
+    "question": "Question text here?",
+    "type": "open-ended" or "specific",
+    "hint": "Optional hint for the student"
+  }
+]
 
+Make questions thought-provoking and test deep understanding.`;
+
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text();
+      
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || 
+                       responseText.match(/```\n([\s\S]*?)\n```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : responseText;
+      
+      const questions = JSON.parse(jsonText);
+
+      return questions;
+    } catch (error) {
+      console.error('Error generating questions:', error);
+      throw new Error('Failed to generate questions');
+    }
+  }
+
+  /**
+   * Analyze transcript for key topics covered
+   */
+  async analyzeTopicsCovered(transcript, expectedTopic) {
+    try {
       const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-8b-instant',
-        temperature: 0.3,
-        max_tokens: 200
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: "You extract key topics and concepts discussed in educational transcripts."
+          },
+          {
+            role: "user",
+            content: `Expected topic: ${expectedTopic}
+
+Transcript:
+${transcript}
+
+Extract the main topics/concepts covered. Return JSON:
+{
+  "topicsCovered": ["topic1", "topic2", ...],
+  "missingTopics": ["topic1", "topic2", ...],
+  "coveragePercentage": <0-100>
+}`
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 500,
+        response_format: { type: "json_object" }
       });
 
-      return completion.choices[0]?.message?.content?.trim();
+      const analysisText = completion.choices[0]?.message?.content;
+      return JSON.parse(analysisText);
     } catch (error) {
-      console.error('❌ Summary generation failed:', error.message);
-      return text.substring(0, maxWords * 5); // Rough fallback
+      console.error('Error analyzing topics:', error);
+      return {
+        topicsCovered: [],
+        missingTopics: [],
+        coveragePercentage: 0
+      };
     }
   }
 }
