@@ -204,7 +204,7 @@ const getMasteryLevel = (avg) => {
   return 'beginner';
 };
 
-export { checkMilestones };
+// // export { checkMilestones };
 ```
 
 // **Then in your sessions controller, call checkMilestones:**
