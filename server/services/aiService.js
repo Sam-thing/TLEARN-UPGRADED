@@ -94,37 +94,36 @@ Please analyze this teaching session and provide feedback in this exact JSON for
    */
   async generateNotes(topicName, subject = '', additionalContext = '') {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });  // ✅ Fixed!
 
       const prompt = `Create comprehensive study notes for: "${topicName}"${subject ? ` in ${subject}` : ''}
 
-${additionalContext ? `Additional context: ${additionalContext}\n` : ''}
-Generate detailed, well-structured study notes in Markdown format.
+  ${additionalContext ? `Additional context: ${additionalContext}\n` : ''}
+  Generate detailed, well-structured study notes in Markdown format.
 
-Include:
-1. Overview/Introduction
-2. Key Concepts (with clear explanations)
-3. Important Details
-4. Examples
-5. Common Misconceptions (if applicable)
-6. Study Tips
+  Include:
+  1. Overview/Introduction
+  2. Key Concepts (with clear explanations)
+  3. Important Details
+  4. Examples
+  5. Common Misconceptions (if applicable)
+  6. Study Tips
 
-Use proper Markdown formatting with headers (##), bullet points, and emphasis.
-Make it comprehensive but clear and organized.`;
+  Use proper Markdown formatting with headers (##), bullet points, and emphasis.
+  Make it comprehensive but clear and organized.`;
 
       const result = await model.generateContent(prompt);
       const notes = result.response.text();
 
       return {
         content: notes,
-        model: 'gemini-1.5-pro'
+        model: 'gemini-pro'
       };
     } catch (error) {
       console.error('Error generating notes:', error);
       throw new Error('Failed to generate study notes');
     }
   }
-
   /**
    * Generate AI questions based on topic
    */
