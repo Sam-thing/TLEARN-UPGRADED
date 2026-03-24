@@ -94,7 +94,8 @@ Please analyze this teaching session and provide feedback in this exact JSON for
    */
   async generateNotes(topicName, subject = '', additionalContext = '') {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });  // ✅ Fixed!
+      // ✅ USE THIS MODEL:
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
       const prompt = `Create comprehensive study notes for: "${topicName}"${subject ? ` in ${subject}` : ''}
 
@@ -117,7 +118,7 @@ Please analyze this teaching session and provide feedback in this exact JSON for
 
       return {
         content: notes,
-        model: 'gemini-pro'
+        model: 'gemini-1.5-flash-latest'
       };
     } catch (error) {
       console.error('Error generating notes:', error);
