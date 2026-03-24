@@ -53,12 +53,14 @@ class AIService {
         messages: [
           {
             role: "system",
-            content: `You are a helpful and honest education coach. Analyze the teaching session and always respond in valid JSON only.
+            content: `You are an expert education analyst. Always respond with **valid JSON only** and nothing else.
+Do not add explanations, markdown, code blocks, or any extra text.
 
 Rules:
-- Score must be integer 0-100
-- Always return exactly 3 strengths and 3 improvements
-- Summary should be 1-2 encouraging sentences`
+- score: integer between 0 and 100
+- strengths: exactly 3 strings
+- improvements: exactly 3 strings
+- summary: one short encouraging sentence (max 100 words)`
           },
           {
             role: "user",
@@ -67,48 +69,52 @@ Rules:
 Transcript:
 ${transcript}
 
-Return your analysis in this exact JSON format (no extra text):
+Analyze this teaching session and output **only** this exact JSON (no extra text):
 
 {
-  "score": <number>,
-  "strengths": ["strength one", "strength two", "strength three"],
-  "improvements": ["improvement one", "improvement two", "improvement three"],
-  "summary": "brief encouraging summary"
+  "score": <number 0-100>,
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "improvements": ["improvement 1", "improvement 2", "improvement 3"],
+  "summary": "brief encouraging summary here"
 }`
           }
         ],
-        temperature: 0.6,
-        max_tokens: 1200,
+        temperature: 0.5,        // lower = more consistent
+        max_tokens: 800,
         response_format: { type: "json_object" }
       });
 
-      let feedbackText = completion.choices[0]?.message?.content?.trim();
+      let rawText = completion.choices[0]?.message?.content?.trim() || '';
 
-      if (!feedbackText) {
-        throw new Error("Empty response from Groq");
-      }
+      // Aggressive cleaning - Groq sometimes wraps output
+      rawText = rawText
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*$/gi, '')
+        .replace(/<function=json>.*?<\/function>/gis, '')
+        .trim();
 
-      // Extra cleaning in case Groq adds markdown or extra text
-      feedbackText = feedbackText.replace(/```json\n?/g, '').replace(/```\s*$/g, '').trim();
+      // If still not starting with {, try to extract JSON
+      const jsonMatch = rawText.match(/(\{[\s\S]*\})/);
+      const jsonText = jsonMatch ? jsonMatch[1] : rawText;
 
-      const feedback = JSON.parse(feedbackText);
+      const feedback = JSON.parse(jsonText);
 
       return {
-        score: Math.min(100, Math.max(0, Number(feedback.score) || 75)),
-        strengths: Array.isArray(feedback.strengths) ? feedback.strengths.slice(0, 3) : [],
-        improvements: Array.isArray(feedback.improvements) ? feedback.improvements.slice(0, 3) : [],
-        summary: feedback.summary || "Good session overall. Keep practicing!",
+        score: Math.min(100, Math.max(0, Number(feedback.score) || 70)),
+        strengths: Array.isArray(feedback.strengths) ? feedback.strengths.slice(0, 3) : ["Clear attempt at explanation", "Topic introduced", "Student engagement"],
+        improvements: Array.isArray(feedback.improvements) ? feedback.improvements.slice(0, 3) : ["Add more examples", "Check understanding", "Improve pacing"],
+        summary: feedback.summary || "Good effort! Keep refining your delivery.",
         model: 'groq-llama-3.3-70b-versatile'
       };
     } catch (error) {
       console.error('Error generating feedback:', error.message || error);
       
-      // Return a safe fallback instead of crashing the route
+      // Safe fallback so frontend never crashes
       return {
-        score: 65,
-        strengths: ["You attempted the topic", "Student engagement attempted", "Basic explanation given"],
-        improvements: ["Add more examples", "Speak slower", "Check student understanding"],
-        summary: "Solid effort! With a few improvements this will be excellent.",
+        score: 68,
+        strengths: ["You covered the main topic", "Attempted clear explanation", "Used some examples"],
+        improvements: ["Add more real-world examples", "Engage students with questions", "Improve pacing and clarity"],
+        summary: "Solid foundation! With small tweaks this will be excellent.",
         model: 'fallback'
       };
     }
@@ -197,35 +203,54 @@ Make questions thought-provoking and test deep understanding.`;
         messages: [
           {
             role: "system",
-            content: "You extract key topics and concepts discussed in educational transcripts."
+            content: `You are an expert at analyzing educational transcripts. Always respond with **valid JSON only** and nothing else.
+No explanations, no markdown, no extra text.`
           },
           {
             role: "user",
-            content: `Expected topic: ${expectedTopic}
+            content: `Expected main topic: ${expectedTopic}
 
 Transcript:
 ${transcript}
 
-Extract the main topics/concepts covered. Return JSON:
+Extract the topics and return **only** this exact JSON:
+
 {
-  "topicsCovered": ["topic1", "topic2", ...],
-  "missingTopics": ["topic1", "topic2", ...],
-  "coveragePercentage": <0-100>
+  "topicsCovered": ["topic1", "topic2", "..."],
+  "missingTopics": ["missing1", "missing2", "..."],
+  "coveragePercentage": <integer between 0 and 100>
 }`
           }
         ],
-        temperature: 0.5,
-        max_tokens: 500,
+        temperature: 0.3,
+        max_tokens: 600,
         response_format: { type: "json_object" }
       });
 
-      const analysisText = completion.choices[0]?.message?.content;
-      return JSON.parse(analysisText);
+      let rawText = completion.choices[0]?.message?.content?.trim() || '';
+
+      // Same cleaning as above
+      rawText = rawText
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*$/gi, '')
+        .replace(/<function=.*?>.*?<\/function>/gis, '')
+        .trim();
+
+      const jsonMatch = rawText.match(/(\{[\s\S]*\})/);
+      const jsonText = jsonMatch ? jsonMatch[1] : rawText;
+
+      const analysis = JSON.parse(jsonText);
+
+      return {
+        topicsCovered: Array.isArray(analysis.topicsCovered) ? analysis.topicsCovered : [],
+        missingTopics: Array.isArray(analysis.missingTopics) ? analysis.missingTopics : [],
+        coveragePercentage: Math.min(100, Math.max(0, Number(analysis.coveragePercentage) || 0))
+      };
     } catch (error) {
-      console.error('Error analyzing topics:', error);
+      console.error('Error analyzing topics:', error.message || error);
       return {
         topicsCovered: [],
-        missingTopics: [],
+        missingTopics: [expectedTopic],
         coveragePercentage: 0
       };
     }
