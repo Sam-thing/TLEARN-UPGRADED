@@ -15,7 +15,7 @@ class AIService {
    */
   async addPunctuation(text) {  // ✅ RENAMED from fixPunctuation
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "llama-3.1-8b-instant" });
       
       const prompt = `Add proper punctuation, capitalization, and paragraph breaks to this transcript. Return ONLY the corrected text, no explanations:
 
@@ -81,7 +81,7 @@ Please analyze this teaching session and provide feedback in this exact JSON for
         strengths: feedback.strengths || [],
         improvements: feedback.improvements || [],
         summary: feedback.summary || '',
-        model: 'groq-llama-3.3-70b'
+        model: 'groq-llama-3.3-70b-versatile'
       };
     } catch (error) {
       console.error('Error generating feedback:', error);
