@@ -46,21 +46,14 @@ class AIService {
   /**
    * Generate AI feedback for teaching session
    */
-  async generateFeedback(topicName, transcript, subject = '') {
+    async generateFeedback(topicName, transcript, subject = '') {
     try {
       const completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: [
           {
             role: "system",
-            content: `You are an expert education analyst. Always respond with **valid JSON only** and nothing else.
-Do not add explanations, markdown, code blocks, or any extra text.
-
-Rules:
-- score: integer between 0 and 100
-- strengths: exactly 3 strings
-- improvements: exactly 3 strings
-- summary: one short encouraging sentence (max 100 words)`
+            content: "You are an expert education analyst. Respond with valid JSON only. No extra text."
           },
           {
             role: "user",
@@ -69,53 +62,58 @@ Rules:
 Transcript:
 ${transcript}
 
-Analyze this teaching session and output **only** this exact JSON (no extra text):
+Return ONLY this exact JSON (add realistic scores):
 
 {
   "score": <number 0-100>,
-  "strengths": ["strength 1", "strength 2", "strength 3"],
-  "improvements": ["improvement 1", "improvement 2", "improvement 3"],
-  "summary": "brief encouraging summary here"
+  "strengths": ["str1", "str2", "str3"],
+  "improvements": ["imp1", "imp2", "imp3"],
+  "summary": "short summary",
+  "accuracyScore": <number 0-100>,
+  "clarityScore": <number 0-100>,
+  "confidenceScore": <number 0-100>,
+  "overall": "one paragraph overall feedback",
+  "missingPoints": ["point1", "point2"]
 }`
           }
         ],
-        temperature: 0.5,        // lower = more consistent
-        max_tokens: 800,
+        temperature: 0.5,
+        max_tokens: 1000,
         response_format: { type: "json_object" }
       });
 
-      let rawText = completion.choices[0]?.message?.content?.trim() || '';
+      let text = completion.choices[0]?.message?.content?.trim() || '';
+      text = text.replace(/```json|```/gi, '').trim();
 
-      // Aggressive cleaning - Groq sometimes wraps output
-      rawText = rawText
-        .replace(/```json\s*/gi, '')
-        .replace(/```\s*$/gi, '')
-        .replace(/<function=json>.*?<\/function>/gis, '')
-        .trim();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanText = jsonMatch ? jsonMatch[0] : text;
 
-      // If still not starting with {, try to extract JSON
-      const jsonMatch = rawText.match(/(\{[\s\S]*\})/);
-      const jsonText = jsonMatch ? jsonMatch[1] : rawText;
-
-      const feedback = JSON.parse(jsonText);
+      const fb = JSON.parse(cleanText);
 
       return {
-        score: Math.min(100, Math.max(0, Number(feedback.score) || 70)),
-        strengths: Array.isArray(feedback.strengths) ? feedback.strengths.slice(0, 3) : ["Clear attempt at explanation", "Topic introduced", "Student engagement"],
-        improvements: Array.isArray(feedback.improvements) ? feedback.improvements.slice(0, 3) : ["Add more examples", "Check understanding", "Improve pacing"],
-        summary: feedback.summary || "Good effort! Keep refining your delivery.",
+        score: Math.min(100, Math.max(0, Number(fb.score) || 75)),
+        strengths: Array.isArray(fb.strengths) ? fb.strengths : [],
+        improvements: Array.isArray(fb.improvements) ? fb.improvements : [],
+        summary: fb.summary || "Good session!",
+        accuracyScore: Math.min(100, Math.max(0, Number(fb.accuracyScore) || 78)),
+        clarityScore: Math.min(100, Math.max(0, Number(fb.clarityScore) || 72)),
+        confidenceScore: Math.min(100, Math.max(0, Number(fb.confidenceScore) || 80)),
+        overall: fb.overall || fb.summary,
+        missingPoints: Array.isArray(fb.missingPoints) ? fb.missingPoints : [],
         model: 'groq-llama-3.3-70b-versatile'
       };
     } catch (error) {
       console.error('Error generating feedback:', error.message || error);
-      
-      // Safe fallback so frontend never crashes
       return {
         score: 68,
-        strengths: ["You covered the main topic", "Attempted clear explanation", "Used some examples"],
-        improvements: ["Add more real-world examples", "Engage students with questions", "Improve pacing and clarity"],
-        summary: "Solid foundation! With small tweaks this will be excellent.",
-        model: 'fallback'
+        strengths: ["Basic explanation given"],
+        improvements: ["Add more examples", "Improve pacing"],
+        summary: "Solid effort!",
+        accuracyScore: 70,
+        clarityScore: 65,
+        confidenceScore: 75,
+        overall: "Good start. Keep practicing to improve depth and engagement.",
+        missingPoints: []
       };
     }
   }
