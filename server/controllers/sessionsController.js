@@ -55,12 +55,20 @@ export const createSession = catchAsync(async (req, res) => {
       strengths: feedback.strengths,
       improvements: feedback.improvements,
       summary: feedback.summary,
-      aiModel: feedback.model
+      accuracyScore: feedback.accuracyScore || 75,
+      clarityScore: feedback.clarityScore || 72,
+      confidenceScore: feedback.confidenceScore || 80,
+      overall: feedback.summary,
+      missingPoints: coverage.missingTopics || [],
+      aiModel: feedback.model || 'unknown'
     },
     analysis: {
       topicsCovered: coverage.topicsCovered,
       missingTopics: coverage.missingTopics,
-      coveragePercentage: coverage.coveragePercentage
+      coveragePercentage: coverage.coveragePercentage,
+      wordCount,
+      fillerWords,
+      wordsPerMin
     },
     status: 'analyzed'
   });

@@ -4,6 +4,7 @@ import multer from 'multer';
 import path from 'path';
 import { protect } from '../middleware/auth.js';
 import Session from '../models/Session.js';
+import { createSession } from '../controllers/sessionsController.js';
 import Topic from '../models/Topic.js';
 
 const router = express.Router();
@@ -125,66 +126,11 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// Create new session
-router.post('/', protect, upload.single('audio'), async (req, res) => {
-  try {
-    const { topicId, transcript, duration } = req.body;
 
-    if (!topicId || !transcript) {
-      return res.status(400).json({ message: 'Topic and transcript required' });
-    }
-
-    // Verify topic exists
-    const topic = await Topic.findById(topicId);
-    if (!topic) {
-      return res.status(404).json({ message: 'Topic not found' });
-    }
-
-    // Calculate word analysis
-    const words = transcript.split(/\s+/).filter(w => w.length > 0);
-    const wordCount = words.length;
-    const fillerWords = words.filter(w => 
-      ['um', 'uh', 'like', 'you know', 'so', 'basically'].includes(w.toLowerCase())
-    ).length;
-    const wordsPerMin = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
-
-    // Create session
-    const session = await Session.create({
-      user: req.user.id,
-      topic: topicId,
-      transcript,
-      duration: parseInt(duration) || 0,
-      audioUrl: req.file ? `/uploaded/sessions/${req.file.filename}` : '',
-      analysis: {
-        wordCount,
-        fillerWords,
-        wordsPerMin
-      },
-      feedback: {
-        score: 0,
-        accuracyScore: 0,
-        clarityScore: 0,
-        confidenceScore: 0,
-        overall: 'AI feedback will be generated shortly...',
-        strengths: [],
-        improvements: [],
-        missingPoints: [],
-        quizQuestions: []
-      },
-      status: 'pending'
-    });
-
-    // TODO: Generate AI feedback here with Claude/OpenAI
-    // This is where you'd call your AI service
-
-    await session.populate('topic', 'name subject difficulty');
-
-    res.status(201).json({ session });
-  } catch (error) {
-    console.error('Error creating session:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+// Create new session - USE THE CONTROLLER
+router.post('/', protect, upload.single('audio'), catchAsync(async (req, res) => {
+  return createSession(req, res);  
+}));
 
 // Delete session
 router.delete('/:id', protect, async (req, res) => {
