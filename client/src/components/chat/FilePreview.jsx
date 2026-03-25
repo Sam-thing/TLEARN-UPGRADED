@@ -3,7 +3,13 @@ import { Download, File, FileText, Image as ImageIcon, Video } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 
 const FilePreview = ({ fileUrl, fileName, fileType, fileSize, mimeType, isOwn }) => {
+
+  const serverUrl = import.meta.env.VITE_SERVER_URL || 'https://tlearnapp.onrender.com';
+
+  const fullFileUrl = fileUrl.startsWith('http') ? fileUrl : `${serverUrl}${fileUrl}`;
+
   const formatFileSize = (bytes) => {
+    if (!bytes) return '0 B';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -18,7 +24,7 @@ const FilePreview = ({ fileUrl, fileName, fileType, fileSize, mimeType, isOwn })
 
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = `http://localhost:5000${fileUrl}`;
+    link.href = fullFileUrl;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
@@ -31,10 +37,10 @@ const FilePreview = ({ fileUrl, fileName, fileType, fileSize, mimeType, isOwn })
       <div className={`max-w-sm ${isOwn ? 'ml-auto' : 'mr-auto'}`}>
         <div className="relative group">
           <img
-            src={`http://localhost:5000${fileUrl}`}
+            src={fullFileUrl}
             alt={fileName}
             className="rounded-lg max-h-80 w-full object-cover cursor-pointer"
-            onClick={() => window.open(`http://localhost:5000${fileUrl}`, '_blank')}
+            onClick={() => window.open(fullFileUrl, '_blank')}
           />
           
           {/* Overlay with download button */}
@@ -65,7 +71,7 @@ const FilePreview = ({ fileUrl, fileName, fileType, fileSize, mimeType, isOwn })
         <video
           controls
           className="rounded-lg max-h-80 w-full"
-          src={`http://localhost:5000${fileUrl}`}
+          src={fullFileUrl}
         />
         
         <div className="flex items-center justify-between mt-2">
@@ -93,7 +99,7 @@ const FilePreview = ({ fileUrl, fileName, fileType, fileSize, mimeType, isOwn })
             ? 'bg-forest/10 border-forest/20'
             : 'bg-white dark:bg-card'
         }`}
-        onClick={() => window.open(`http://localhost:5000${fileUrl}`, '_blank')}
+        onClick={() => window.open(fullFileUrl, '_blank')}
       >
         <div className={`flex-shrink-0 w-12 h-12 rounded flex items-center justify-center ${
           isOwn ? 'bg-forest/20' : 'bg-gray-100 dark:bg-gray-800'

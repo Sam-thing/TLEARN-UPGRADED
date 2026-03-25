@@ -2,11 +2,12 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, 
+  baseURL: import.meta.env.VITE_API_URL || 'https://tlearnapp.onrender.com/api',
   withCredentials: true,
+  timeout: 15000,
 });
 
-// Add token from localStorage to every request
+// Request interceptor - Add Authorization token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -15,20 +16,20 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => response.data,  // ← Extract .data automatically
+  (response) => response.data,
   (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+
     if (error.response?.status === 401) {
-      if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/';
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error.response?.data || error);

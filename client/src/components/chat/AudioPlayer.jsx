@@ -24,7 +24,7 @@ const AudioPlayer = ({ audioUrl, duration, waveformData = [], isOwn }) => {
   // Construct full URL if needed
   const fullAudioUrl = audioUrl.startsWith('http') 
     ? audioUrl 
-    : `http://localhost:5000${audioUrl}`;
+    : `${import.meta.env.VITE_SERVER_URL || 'https://tlearnapp.onrender.com'}${audioUrl}`;
 
   console.log('🎵 AudioPlayer rendering:', {
     audioUrl,
