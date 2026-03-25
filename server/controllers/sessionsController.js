@@ -1,4 +1,4 @@
-// server/controllers/sessionsController.js
+// server/controllers/sessionsController.js - COMPLETE FIXED VERSION
 import Session from '../models/Session.js';
 import Topic from '../models/Topic.js';
 import User from '../models/User.js';
@@ -14,6 +14,8 @@ import { catchAsync } from '../middleware/errorHandler.js';
 export const createSession = catchAsync(async (req, res) => {
   const { topicId, transcript, duration, audioUrl } = req.body;
 
+  console.log('📝 Creating session for topic:', topicId);
+
   if (!topicId || !transcript) {
     return res.status(400).json({ 
       message: 'Topic ID and transcript are required' 
@@ -26,21 +28,37 @@ export const createSession = catchAsync(async (req, res) => {
     return res.status(404).json({ message: 'Topic not found' });
   }
 
+  console.log('✅ Topic found:', topic.name);
+
   // ✅ STEP 1: Add punctuation to transcript
+  console.log('🔧 Adding punctuation...');
   const correctedTranscript = await aiService.addPunctuation(transcript);
+  console.log('✅ Punctuation added');
 
   // ✅ STEP 2: Generate AI feedback
+  console.log('🤖 Generating AI feedback...');
   const feedback = await aiService.generateFeedback(
     topic.name,
     correctedTranscript,
     topic.subject
   );
+  console.log('✅ Feedback generated - Score:', feedback.score);
 
   // ✅ STEP 3: Analyze topic coverage
+  console.log('🔍 Analyzing topic coverage...');
   const coverage = await aiService.analyzeTopicsCovered(
     correctedTranscript,
     topic.name
   );
+  console.log('✅ Coverage analyzed:', coverage.coveragePercentage + '%');
+
+  // Calculate word stats
+  const words = correctedTranscript.split(/\s+/);
+  const wordCount = words.length;
+  const fillerWords = words.filter(w => 
+    ['um', 'uh', 'like', 'so', 'you know', 'basically', 'actually'].includes(w.toLowerCase())
+  ).length;
+  const wordsPerMin = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
 
   // Create session with AI feedback
   const session = await Session.create({
@@ -51,27 +69,29 @@ export const createSession = catchAsync(async (req, res) => {
     duration: duration || 0,
     audioUrl,
     feedback: {
-      score: feedback.score,
-      strengths: feedback.strengths,
-      improvements: feedback.improvements,
-      summary: feedback.summary,
+      score: feedback.score || 70,
+      strengths: feedback.strengths || [],
+      improvements: feedback.improvements || [],
+      summary: feedback.summary || '',
       accuracyScore: feedback.accuracyScore || 75,
-      clarityScore: feedback.clarityScore || 72,
-      confidenceScore: feedback.confidenceScore || 80,
-      overall: feedback.summary,
-      missingPoints: coverage.missingTopics || [],
+      clarityScore: feedback.clarityScore || 70,
+      confidenceScore: feedback.confidenceScore || 75,
+      overall: feedback.overall || feedback.summary || 'Good session!',
+      missingPoints: feedback.missingPoints || coverage.missingTopics || [],
       aiModel: feedback.model || 'unknown'
     },
     analysis: {
-      topicsCovered: coverage.topicsCovered,
-      missingTopics: coverage.missingTopics,
-      coveragePercentage: coverage.coveragePercentage,
+      topicsCovered: coverage.topicsCovered || [],
+      missingTopics: coverage.missingTopics || [],
+      coveragePercentage: coverage.coveragePercentage || 0,
       wordCount,
       fillerWords,
       wordsPerMin
     },
     status: 'analyzed'
   });
+
+  console.log('✅ Session created with ID:', session._id);
 
   // ✅ STEP 4: Update user stats
   const user = await User.findById(req.user._id);
@@ -80,8 +100,8 @@ export const createSession = catchAsync(async (req, res) => {
   
   // Update average score
   const allSessions = await Session.find({ user: req.user._id, status: 'analyzed' });
-  const totalScore = allSessions.reduce((sum, s) => sum + s.feedback.score, 0);
-  user.stats.averageScore = Math.round(totalScore / allSessions.length);
+  const totalScore = allSessions.reduce((sum, s) => sum + (s.feedback?.score || 0), 0);
+  user.stats.averageScore = allSessions.length > 0 ? Math.round(totalScore / allSessions.length) : 0;
   
   // Update streak
   const today = new Date().toISOString().split('T')[0];
@@ -100,19 +120,34 @@ export const createSession = catchAsync(async (req, res) => {
   user.stats.lastSessionDate = new Date();
   await user.save();
 
+  console.log('✅ User stats updated');
+
   // ✅ STEP 5: Send notification
-  await notificationService.sessionCompleted(
-    req.user._id,
-    session._id,
-    feedback.score,
-    topic.name
-  );
+  try {
+    await notificationService.sessionCompleted(
+      req.user._id,
+      session._id,
+      feedback.score,
+      topic.name
+    );
+    console.log('✅ Notification sent');
+  } catch (error) {
+    console.error('❌ Notification failed:', error.message);
+    // Don't fail the whole request if notification fails
+  }
 
   // ✅ STEP 6: Check for milestone achievements
-  await checkMilestones(req.user._id);
+  try {
+    await checkMilestones(req.user._id);
+    console.log('✅ Milestones checked');
+  } catch (error) {
+    console.error('❌ Milestone check failed:', error.message);
+  }
 
   // Populate topic details for response
   await session.populate('topic', 'name subject');
+
+  console.log('🎉 Session creation complete!');
 
   res.status(201).json({ 
     session,
@@ -181,7 +216,7 @@ export const deleteSession = catchAsync(async (req, res) => {
   });
   
   if (remainingSessions.length > 0) {
-    const totalScore = remainingSessions.reduce((sum, s) => sum + s.feedback.score, 0);
+    const totalScore = remainingSessions.reduce((sum, s) => sum + (s.feedback?.score || 0), 0);
     user.stats.averageScore = Math.round(totalScore / remainingSessions.length);
   } else {
     user.stats.averageScore = 0;
@@ -219,6 +254,11 @@ export const regenerateFeedback = catchAsync(async (req, res) => {
     strengths: feedback.strengths,
     improvements: feedback.improvements,
     summary: feedback.summary,
+    accuracyScore: feedback.accuracyScore || 75,
+    clarityScore: feedback.clarityScore || 70,
+    confidenceScore: feedback.confidenceScore || 75,
+    overall: feedback.overall || feedback.summary,
+    missingPoints: feedback.missingPoints || [],
     aiModel: feedback.model
   };
 

@@ -56,16 +56,16 @@ const SessionDetailPage = () => {
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-500';
-    if (score >= 60) return 'text-yellow-500';
+    if (score >= 60) return 'text-green-500';
+    if (score >= 50) return 'text-yellow-500';
     return 'text-red-500';
   };
 
   const getScoreGrade = (score) => {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
+    if (score >= 80) return 'A';
+    if (score >= 60) return 'B';
+    if (score >= 50) return 'C';
+    if (score >= 40) return 'D';
     return 'F';
   };
 
