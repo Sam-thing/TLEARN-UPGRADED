@@ -88,5 +88,3 @@ export const deleteGoal = catchAsync(async (req, res) => {
 
   res.json({ message: 'Goal deleted successfully' });
 });
-
-export { getGoals, createGoal, updateGoal, deleteGoal };
