@@ -21,6 +21,7 @@ import topicRoutes    from './routes/topics.js';
 import sessionRoutes  from './routes/sessions.js';
 import roomRoutes     from './routes/rooms.js';
 import notesRoutes    from './routes/notes.js';
+import goalsRouter from './routes/goals.js';
 import progressRoutes from './routes/progress.js';
 import userRoutes from './routes/user.js';
 import aiRoutes from './routes/ai.js';
@@ -112,6 +113,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/audio', audioMessageRoutes);
 app.use('/api/files', fileMessageRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/goals', goalsRouter);
 app.use('/api/notifications', notificationRoutes);
 
 // ── Health ─────────────────────────────────────────────
