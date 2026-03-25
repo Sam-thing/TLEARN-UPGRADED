@@ -205,7 +205,6 @@ const getMasteryLevel = (avg) => {
 };
 
 // // export { checkMilestones };
-```
 
 // **Then in your sessions controller, call checkMilestones:**
 
@@ -220,4 +219,4 @@ const getMasteryLevel = (avg) => {
   
 //   res.status(201).json({ session });
 // });
-// ```
+// 
