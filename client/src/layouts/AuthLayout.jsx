@@ -129,7 +129,7 @@ const AuthLayout = () => {
         {/* Mobile logo */}
         <Link to="/" className="flex items-center gap-2 mb-10 lg:hidden">
           <div className="w-8 h-8 rounded-lg bg-[oklch(0.62_0.17_158)] flex items-center justify-center">
-            <span className="text-white font-bold" style={{ fontFamily: 'Cabinet Grotesk, DM Sans, sans-serif' }}>T</span>
+            <span className="text-white font-bold" style={{ fontFamily: 'DM Mono, monospace' }}>T</span>
           </div>
           <span className="font-bold text-lg text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]" style={{ fontFamily: 'Cabinet Grotesk, DM Sans, sans-serif' }}>
             T.Learn

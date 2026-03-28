@@ -15,6 +15,11 @@ import ProgressPage from './pages/progress/ProgressPage';
 import RoomPage from './pages/rooms/RoomPage'; // ← Fixed import
 import RoomChatPage from './pages/rooms/RoomChatPage'; // ← Chat page
 import ProfilePage from './pages/profile/ProfilePage';
+import ExamsPage from '@/pages/exams/ExamsPage';
+import TakeExamPage from '@/pages/exams/TakeExamPage';
+import ExamResultsPage from '@/pages/exams/ExamResultsPage';
+import FlashcardsPage from '@/pages/flashcards/FlashcardsPage';
+import ReviewFlashcardsPage from '@/pages/flashcards/ReviewFlashcardsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import SessionDetailPage from './pages/sessions/SessionDetailPage';
 // import SessionHistoryPage from './pages/sessions/SessionHistoryPage';
@@ -69,7 +74,16 @@ function App() {
                   
                   {/* Notes */}
                   <Route path="/notes" element={<NotesPage />} />
+
+                  {/* Exams */}
+                  <Route path="/exams" element={<ExamsPage />} />
+                  <Route path="/exams/:id/take" element={<TakeExamPage />} />
+                  <Route path="/exams/:id/results" element={<ExamResultsPage />} />
                   
+                  {/* Flashcards */}
+                  <Route path="/flashcards" element={<FlashcardsPage />} />
+                  <Route path="/flashcards/review" element={<ReviewFlashcardsPage />} />
+
                   {/* Study Rooms */}
                   <Route path="/rooms" element={<RoomPage />} />
                   <Route path="/rooms/:roomId" element={<RoomChatPage />} /> {/* ← Chat room */}

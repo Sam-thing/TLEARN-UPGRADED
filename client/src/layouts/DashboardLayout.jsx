@@ -16,9 +16,12 @@ import {
   LogOut,
   Menu,
   X,
+  GraduationCap,
   Bell,
   Search,
   Moon,
+  Calendar,
+  Brain,
   Sun,
   User,
   ChevronDown
@@ -46,9 +49,12 @@ const DashboardLayout = () => {
   const navigation = [
     { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
     { name: t('nav.topics'), href: '/topics', icon: BookOpen },
+    { name: t('nav.sessions'), href: '/sessions', icon: Mic },
     { name: t('nav.studyRooms'), href: '/rooms', icon: Users },
     { name: t('nav.notes'), href: '/notes', icon: FileText },
-    { name: t('nav.sessions'), href: '/sessions', icon: Mic },
+    { name: t('nav.exams'), href: '/exams', icon: GraduationCap },
+    { name: t('nav.flashcards'), href: '/flashcards', icon: Brain },
+    { name: t('nav.calendar'), href: '/calendar', icon: Calendar },
     { name: t('nav.progress'), href: '/progress', icon: TrendingUp },
   ];
 
