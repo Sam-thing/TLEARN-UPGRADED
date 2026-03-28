@@ -84,6 +84,9 @@ function App() {
                   <Route path="/flashcards" element={<FlashcardsPage />} />
                   <Route path="/flashcards/review" element={<ReviewFlashcardsPage />} />
 
+                  {/* Calendar */}
+                  <Route path="/calendar" element={<CalendarPage />} />
+
                   {/* Study Rooms */}
                   <Route path="/rooms" element={<RoomPage />} />
                   <Route path="/rooms/:roomId" element={<RoomChatPage />} /> {/* ← Chat room */}
