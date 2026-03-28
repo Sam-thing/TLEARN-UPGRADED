@@ -1,59 +1,59 @@
-// server/services/aiService.js - COMPLETE FIXED VERSION
+// server/services/aiService.js - SAFE & LAZY INITIALIZATION
 import Groq from 'groq-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize AI clients
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+// Lazy clients - only created when first used
+let groq = null;
+let genAI = null;
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const getGroq = () => {
+  if (!groq) {
+    if (!process.env.GROQ_API_KEY) {
+      console.error("❌ GROQ_API_KEY is missing or empty in .env file!");
+      throw new Error("GROQ_API_KEY is not configured. Check your .env file.");
+    }
+    groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    console.log("✅ Groq client initialized successfully");
+  }
+  return groq;
+};
+
+const getGenAI = () => {
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+  }
+  return genAI;
+};
 
 class AIService {
 
-  /**
-   * Add punctuation - FIXED: Use correct Gemini model (gemini-2.5-flash is now stable)
-   */
   async addPunctuation(text) {
-      try {
-        // Use the current stable fast model for punctuation
-        const model = genAI.getGenerativeModel({ 
-          model: "gemini-2.5-flash"   // ← This should work now (March 2026)
-        });
-
-        const prompt = `You are an expert transcriber. Add proper punctuation, capitalization, paragraph breaks, and fix obvious grammar/spelling issues.
-  Return **ONLY** the corrected text. No explanations, no quotes, no markdown.
-
-  Original transcript:
-  ${text}`;
-
-        const result = await model.generateContent(prompt);
-        let correctedText = result.response.text().trim();
-
-        // Safety fallback
-        if (!correctedText || correctedText.length < text.length * 0.5) {
-          correctedText = text;
-        }
-
-        return correctedText;
-      } catch (error) {
-        console.error('Error adding punctuation:', error.message || error);
-        // Return original so the frontend doesn't break
-        return text;
-      }
-    }
-    
-  /**
-   * Generate AI feedback for teaching session
-   */
-    async generateFeedback(topicName, transcript, subject = '') {
     try {
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+      const genAIClient = getGenAI();
+      const model = genAIClient.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      const prompt = `Add proper punctuation, capitalization, paragraph breaks to this transcript. Return ONLY the corrected text:
+
+${text}`;
+
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim() || text;
+    } catch (error) {
+      console.error('Error adding punctuation:', error.message);
+      return text;
+    }
+  }
+
+  async generateFeedback(topicName, transcript, subject = '') {
+    try {
+      const groqClient = getGroq();
+
+      const completion = await groqClient.chat.completions.create({
+        model: "llama-3.1-8b-instant",        // Using lighter model to save tokens
         messages: [
           {
             role: "system",
-            content: "You are an expert education analyst. Respond with valid JSON only. No extra text."
+            content: "You are an expert education analyst. Always respond with valid JSON only."
           },
           {
             role: "user",
@@ -62,58 +62,39 @@ class AIService {
 Transcript:
 ${transcript}
 
-Return ONLY this exact JSON (add realistic scores):
-
+Return ONLY this exact JSON:
 {
   "score": <number 0-100>,
-  "strengths": ["str1", "str2", "str3"],
-  "improvements": ["imp1", "imp2", "imp3"],
-  "summary": "short summary",
-  "accuracyScore": <number 0-100>,
-  "clarityScore": <number 0-100>,
-  "confidenceScore": <number 0-100>,
-  "overall": "one paragraph overall feedback",
-  "missingPoints": ["point1", "point2"]
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "improvements": ["improvement 1", "improvement 2", "improvement 3"],
+  "summary": "brief encouraging summary"
 }`
           }
         ],
         temperature: 0.5,
-        max_tokens: 1000,
+        max_tokens: 800,
         response_format: { type: "json_object" }
       });
 
       let text = completion.choices[0]?.message?.content?.trim() || '';
       text = text.replace(/```json|```/gi, '').trim();
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const cleanText = jsonMatch ? jsonMatch[0] : text;
-
-      const fb = JSON.parse(cleanText);
+      const feedback = JSON.parse(text);
 
       return {
-        score: Math.min(100, Math.max(0, Number(fb.score) || 75)),
-        strengths: Array.isArray(fb.strengths) ? fb.strengths : [],
-        improvements: Array.isArray(fb.improvements) ? fb.improvements : [],
-        summary: fb.summary || "Good session!",
-        accuracyScore: Math.min(100, Math.max(0, Number(fb.accuracyScore) || 78)),
-        clarityScore: Math.min(100, Math.max(0, Number(fb.clarityScore) || 72)),
-        confidenceScore: Math.min(100, Math.max(0, Number(fb.confidenceScore) || 80)),
-        overall: fb.overall || fb.summary,
-        missingPoints: Array.isArray(fb.missingPoints) ? fb.missingPoints : [],
-        model: 'groq-llama-3.3-70b-versatile'
+        score: Math.min(100, Math.max(0, Number(feedback.score) || 75)),
+        strengths: Array.isArray(feedback.strengths) ? feedback.strengths : [],
+        improvements: Array.isArray(feedback.improvements) ? feedback.improvements : [],
+        summary: feedback.summary || "Good effort overall.",
+        model: 'groq-llama-3.1-8b-instant'
       };
     } catch (error) {
       console.error('Error generating feedback:', error.message || error);
       return {
         score: 68,
-        strengths: ["Basic explanation given"],
-        improvements: ["Add more examples", "Improve pacing"],
-        summary: "Solid effort!",
-        accuracyScore: 70,
-        clarityScore: 65,
-        confidenceScore: 75,
-        overall: "Good start. Keep practicing to improve depth and engagement.",
-        missingPoints: []
+        strengths: ["Attempted the topic", "Basic explanation given"],
+        improvements: ["Add more examples", "Speak more clearly"],
+        summary: "Solid effort! Keep practicing."
       };
     }
   }

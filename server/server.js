@@ -15,7 +15,9 @@ import notificationRoutes from './routes/notifications.js';
 import audioMessageRoutes from './routes/audioMessages.js';
 import settingsRoutes from './routes/settings.js';
 import fileMessageRoutes from './routes/fileMessages.js';
-
+import examRoutes from './routes/exams.js';
+import flashcardRoutes from './routes/flashcards.js';
+import calendarRoutes from './routes/calendar.js';
 import authRoutes     from './routes/auth.js';
 import topicRoutes    from './routes/topics.js';
 import sessionRoutes  from './routes/sessions.js';
@@ -31,6 +33,8 @@ import { setupSocket }  from './socket/index.js';
 
 dotenv.config();
 dns.setServers(['8.8.8.8']);
+
+console.log("GROQ_API_KEY loaded:", process.env.GROQ_API_KEY ? "Yes" : "No");
 
 const app        = express();
 const httpServer = createServer(app);
@@ -61,7 +65,9 @@ app.use(helmet());
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://tlearn-upgraded.vercel.app"
+  "https://tlearn-upgraded.vercel.app",
+  "https://tlearnapp.onrender.com",
+  process.env.CLIENT_URL
 ];
 
 app.use(cors({
@@ -114,6 +120,9 @@ app.use('/api/audio', audioMessageRoutes);
 app.use('/api/files', fileMessageRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/goals', goalsRouter);
+app.use('/api/exams', examRoutes);
+app.use('/api/flashcards', flashcardRoutes);
+app.use('/api/calendar', calendarRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // ── Health ─────────────────────────────────────────────
