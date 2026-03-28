@@ -19,6 +19,7 @@ import ExamsPage from '@/pages/exams/ExamsPage';
 import TakeExamPage from '@/pages/exams/TakeExamPage';
 import ExamResultsPage from '@/pages/exams/ExamResultsPage';
 import FlashcardsPage from '@/pages/flashcards/FlashcardsPage';
+import CalendarPage from '@/pages/calendar/CalendarPage';
 import ReviewFlashcardsPage from '@/pages/flashcards/ReviewFlashcardsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import SessionDetailPage from './pages/sessions/SessionDetailPage';
