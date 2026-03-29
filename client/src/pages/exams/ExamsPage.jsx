@@ -41,6 +41,7 @@ const ExamsPage = () => {
   const [loading, setLoading] = useState(true);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const { trackActivity } = useGamification();
 
   useEffect(() => {
     loadData();
@@ -101,6 +102,26 @@ const ExamsPage = () => {
       </div>
     );
   }
+
+  // Award XP for completing exams
+  const handleExamCompleted = async (examId, score, passed) => {
+    try {
+      await gamificationService.trackActivity('exam_completed', {
+        examId,
+        score,
+        passed
+      });
+
+      // Optional: Show XP notification
+      if (passed) {
+        toast.success(`Exam completed! +20 XP`);
+      } else {
+        toast.success(`Exam completed! +10 XP`);
+      }
+    } catch (error) {
+      console.error('Failed to award XP for exam:', error);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">

@@ -210,6 +210,11 @@ export const reviewFlashcard = catchAsync(async (req, res) => {
   });
 });
 
+// After flashcard review
+await gamificationService.trackActivity(req.user._id, 'flashcard_reviewed', {
+  mastered: flashcard.repetitions >= 5
+});
+
 /**
  * PUT /api/flashcards/:id
  * Update a flashcard

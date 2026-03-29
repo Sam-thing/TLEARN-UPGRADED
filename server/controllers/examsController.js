@@ -190,6 +190,12 @@ export const submitExam = catchAsync(async (req, res) => {
     return res.status(400).json({ message: 'Exam already submitted' });
   }
 
+  // After exam submission
+  await gamificationService.trackActivity(req.user._id, 'exam_completed', {
+    passed: exam.passed,
+    score: exam.score
+  });
+
   // Grade the exam
   exam.questions.forEach(question => {
     const userAnswer = answers.find(a => a.questionId === question._id.toString());

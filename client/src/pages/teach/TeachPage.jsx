@@ -87,6 +87,20 @@ const TeachPage = () => {
     startListening();
   };
 
+  const handleSessionComplete = async (sessionData) => {
+    try {
+      await gamificationService.trackActivity('session_completed', {
+        duration: sessionData.duration,
+        topicId: sessionData.topicId,
+        score: sessionData.feedback?.score
+      });
+
+      toast.success(`Session completed! +10 XP`);
+    } catch (error) {
+      console.error('Failed to track session activity:', error);
+    }
+  };
+
   const handleStopTeaching = async () => {
     setTimerActive(false);
     stopRecording();

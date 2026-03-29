@@ -22,6 +22,11 @@ export const createSession = catchAsync(async (req, res) => {
     });
   }
 
+  // In sessionsController.js after creating session
+  await gamificationService.trackActivity(req.user._id, 'session_completed', {
+    duration: session.duration
+  });
+
   // Get topic details
   const topic = await Topic.findById(topicId);
   if (!topic) {
