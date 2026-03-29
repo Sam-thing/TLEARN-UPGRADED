@@ -2,6 +2,7 @@
 import Exam from '../models/Exam.js';
 import Topic from '../models/Topic.js';
 import aiService from '../services/aiService.js';
+import { gamificationService } from '../services/gamificationService.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 
 /**
