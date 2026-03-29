@@ -170,4 +170,5 @@ class GamificationService {
   }
 }
 
-export default new GamificationService();
+const gamificationService = new GamificationService();
+export { gamificationService };
