@@ -1,6 +1,6 @@
 // server/services/gamificationService.js
 import Gamification from '../models/Gamification.js';
-import { XP_REWARDS, checkAchievements } from '../config/achievements.js';
+import { XP_REWARDS, checkAchievements } from '../config/achievement.js';
 
 /**
  * Gamification Service - Business Logic Layer
