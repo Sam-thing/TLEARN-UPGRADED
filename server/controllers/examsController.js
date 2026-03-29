@@ -3,6 +3,7 @@ import Exam from '../models/Exam.js';
 import Topic from '../models/Topic.js';
 import aiService from '../services/aiService.js';
 import { catchAsync } from '../middleware/errorHandler.js';
+import gamificationService from '../services/gamificationService.js';
 
 /**
  * POST /api/exams
@@ -219,6 +220,17 @@ export const submitExam = catchAsync(async (req, res) => {
   
   await exam.save();
   await exam.populate('topics', 'name subject');
+
+  //Track gamification activity
+  try {
+    await gamificationService.trackActivity(req.user._id, 'exam_completed', {
+      passed: exam.passed,
+      score: exam.score
+    });
+    console.log('✅ Gamification activity tracked');
+  } catch (error) {
+    console.error('❌ Gamification tracking failed:', error.message);
+  }
 
   res.json({ 
     exam,

@@ -4,6 +4,7 @@ import Topic from '../models/Topic.js';
 import User from '../models/User.js';
 import aiService from '../services/aiService.js';
 import notificationService from '../services/notificationService.js';
+import gamificationService from '../services/gamificationService.js';
 import { checkMilestones } from './progressController.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 
@@ -148,6 +149,17 @@ export const createSession = catchAsync(async (req, res) => {
   } catch (error) {
     console.error('❌ Milestone check failed:', error.message);
   }
+
+  // ✅ STEP 7: Track gamification activity
+  try {
+    await gamificationService.trackActivity(req.user._id, 'session_completed', {
+      duration: session.duration
+    });
+    console.log('✅ Gamification activity tracked');
+  } catch (error) {
+    console.error('❌ Gamification tracking failed:', error.message);
+  }
+
 
   // Populate topic details for response
   await session.populate('topic', 'name subject');
