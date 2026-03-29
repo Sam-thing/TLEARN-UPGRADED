@@ -4,7 +4,7 @@ import Topic from '../models/Topic.js';
 import User from '../models/User.js';
 import aiService from '../services/aiService.js';
 import notificationService from '../services/notificationService.js';
-import gamificationService from '../services/gamificationService.js';
+import { gamificationService } from '../services/gamificationService.js';
 import { checkMilestones } from './progressController.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 
