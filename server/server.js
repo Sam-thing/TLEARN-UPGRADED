@@ -50,7 +50,9 @@ export const io = new Server(httpServer, {
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ["websocket", "polling"]
+  transports: ["websocket", "polling"],
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Setup existing socket functionality (teaching sessions, etc.)
@@ -67,22 +69,34 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://tlearn-upgraded.vercel.app",
   "https://tlearnapp.onrender.com",
-  process.env.CLIENT_URL
+  /\.vercel\.app$/
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.endsWith(".vercel.app")
-    ) {
+    // Allow requests with no origin (like Postman, mobile apps, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      }
+      return allowedOrigin.test(origin); // for regex like /\.vercel\.app$/
+    });
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      console.log(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
