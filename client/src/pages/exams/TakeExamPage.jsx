@@ -162,7 +162,8 @@ const TakeExamPage = () => {
   };
 
   const answeredCount = Object.values(answers).filter(a => a.trim() !== '').length;
-  const progress = (answeredCount / exam?.questions.length) * 100;
+  const totalQuestions = exam?.questions?.length || 1;
+  const progress = (answeredCount / totalQuestions) * 100;
 
   if (loading) {
     return (
@@ -174,9 +175,9 @@ const TakeExamPage = () => {
 
   if (!exam) return null;
 
-  const question = exam.questions[currentQuestion];
-  const isLastQuestion = currentQuestion === exam.questions.length - 1;
-
+  const question = exam?.questions?.[currentQuestion];
+  const isLastQuestion = currentQuestion === exam?.questions?.length - 1;
+  
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header with Timer */}
@@ -188,7 +189,7 @@ const TakeExamPage = () => {
                 {exam.title}
               </h1>
               <p className="text-text-medium mt-1">
-                Question {currentQuestion + 1} of {exam.questions.length}
+                Question {currentQuestion + 1} of {exam?.questions?.length}
               </p>
             </div>
             
@@ -198,7 +199,7 @@ const TakeExamPage = () => {
                 {formatTime(timeLeft)}
               </div>
               <p className="text-sm text-text-medium mt-1">
-                {answeredCount}/{exam.questions.length} answered
+                {answeredCount}/{exam?.questions?.length} answered
               </p>
               <Progress value={progress} className="h-2 mt-2" />
             </div>
@@ -214,7 +215,7 @@ const TakeExamPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-5 lg:grid-cols-4 gap-2">
-              {exam.questions.map((q, index) => (
+              {exam?.questions?.map((q, index) => (
                 <button
                   key={q._id}
                   onClick={() => jumpToQuestion(index)}
