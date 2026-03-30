@@ -143,13 +143,13 @@ const GenerateExamDialog = ({ onSuccess, onClose }) => {
 
         {/* Difficulty */}
         <div>
-          <Label htmlFor="difficulty">Difficulty Level</Label>
+          <Label>Difficulty Level</Label>
           <Select
-            value={formData.difficulty}
+            value={formData.difficulty || "medium"}
             onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select difficulty level" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="easy">Easy</SelectItem>
