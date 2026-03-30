@@ -41,7 +41,6 @@ const ExamsPage = () => {
   const [loading, setLoading] = useState(true);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const { trackActivity } = useGamification();
 
   useEffect(() => {
     loadData();
