@@ -33,6 +33,14 @@ import { examService } from '@/services/examService';
 const TakeExamPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!id) {
+      toast.error("Invalid exam link");
+      navigate('/exams');
+      return;
+    }
+  }, [id, navigate]);
   
   const [exam, setExam] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -75,8 +83,15 @@ const TakeExamPage = () => {
   }, [timeLeft]);
 
   const loadExam = async () => {
+    if (!id)
+      return;
     try {
       const data = await examService.getById(id);
+      if (!data.exam && !data) {
+        toast.error("Exam not found");
+        navigate('/exams');
+        return;
+      }
       setExam(data.exam || data);
 
       // Initialize answers

@@ -1,150 +1,110 @@
-// src/pages/exams/TakeExamPage.jsx - FIXED (Minimal Changes)
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+// src/pages/exams/ExamsPage.jsx
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
+  GraduationCap,
+  Plus,
+  Sparkles,
   Clock,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle,
-  AlertCircle,
-  Send
+  XCircle,
+  Trophy,
+  TrendingUp,
+  Calendar,
+  BarChart3,
+  Play,
+  Eye,
+  Trash2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { examService } from '@/services/examService';
+import GenerateExamDialog from '@/components/exams/GenerateExamDialog';
 
-const TakeExamPage = () => {
-  const { id } = useParams();
+const ExamsPage = () => {
   const navigate = useNavigate();
-  
-  const [exam, setExam] = useState(null);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(null);
+  const [exams, setExams] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  
-  const timerRef = useRef(null);
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
-    loadExam();
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [id]);
+    loadData();
+  }, []);
 
-  useEffect(() => {
-    if (exam && timeLeft === null) {
-      setTimeLeft(exam.timeLimit * 60);
-    }
-  }, [exam]);
-
-  useEffect(() => {
-    if (timeLeft !== null && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            handleSubmit(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timerRef.current);
-    }
-  }, [timeLeft]);
-
-  const loadExam = async () => {
+  const loadData = async () => {
     try {
-      const data = await examService.getById(id);
-      setExam(data.exam || data);
-
-      const initialAnswers = {};
-      (data.exam?.questions || data.questions || []).forEach(q => {
-        initialAnswers[q._id] = '';
-      });
-      setAnswers(initialAnswers);
+      const [examsData, statsData] = await Promise.all([
+        examService.getAll(),
+        examService.getStats()
+      ]);
+      setExams(examsData.exams || []);
+      setStats(statsData.stats || {});
     } catch (error) {
-      toast.error('Failed to load exam');
-      navigate('/exams');
+      console.error('Failed to load exams:', error);
+      toast.error('Failed to load exams');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (autoSubmit = false) => {
-    if (!autoSubmit) {
-      setShowSubmitDialog(false);
+  const handleStartExam = async (examId) => {
+    if (!examId) {
+      toast.error("Invalid exam ID");
+      return;
     }
-
-    setSubmitting(true);
-    
     try {
-      const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
-        questionId,
-        answer: answer.trim()
-      }));
-
-      await examService.submit(id, formattedAnswers);
-      
-      toast.success(autoSubmit ? 'Time\'s up! Exam auto-submitted' : 'Exam submitted successfully!');
-      navigate(`/exams/${id}/results`);
+      await examService.start(examId);
+      navigate(`/exams/${examId}/take`);
     } catch (error) {
-      toast.error('Failed to submit exam');
-      setSubmitting(false);
+      toast.error('Failed to start exam');
     }
   };
 
-  const handleAnswerChange = (questionId, value) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: value
-    }));
+  const handleViewResults = (examId) => {
+    if (!examId) {
+      toast.error("Invalid exam ID");
+      return;
+    }
+    navigate(`/exams/${examId}/results`);
   };
 
-  const nextQuestion = () => {
-    if (currentQuestion < (exam?.questions?.length || 0) - 1) {
-      setCurrentQuestion(prev => prev + 1);
+  const handleDeleteExam = async (examId) => {
+    if (!examId) {
+      toast.error("Invalid exam ID");
+      return;
+    }
+    if (!confirm('Are you sure you want to delete this exam?')) return;
+
+    try {
+      await examService.delete(examId);
+      toast.success('Exam deleted');
+      loadData();
+    } catch (error) {
+      toast.error('Failed to delete exam');
     }
   };
 
-  const previousQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-    }
-  };
-
-  const jumpToQuestion = (index) => {
-    setCurrentQuestion(index);
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const answeredCount = Object.values(answers).filter(a => a.trim() !== '').length;
-  const progress = (answeredCount / (exam?.questions?.length || 1)) * 100;
+  const filteredExams = exams.filter(exam => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'active') return exam.status === 'active' || exam.status === 'draft';
+    if (activeTab === 'completed') return exam.status === 'graded' || exam.status === 'completed';
+    return true;
+  });
 
   if (loading) {
     return (
@@ -154,238 +114,297 @@ const TakeExamPage = () => {
     );
   }
 
-  if (!exam) return null;
+  // Award XP for completing exams
+  const handleExamCompleted = async (examId, score, passed) => {
+    try {
+      await gamificationService.trackActivity('exam_completed', {
+        examId,
+        score,
+        passed
+      });
 
-  const question = exam.questions[currentQuestion];
-  const isLastQuestion = currentQuestion === exam.questions.length - 1;
+      // Optional: Show XP notification
+      if (passed) {
+        toast.success(`Exam completed! +20 XP`);
+      } else {
+        toast.success(`Exam completed! +10 XP`);
+      }
+    } catch (error) {
+      console.error('Failed to award XP for exam:', error);
+    }
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header with Timer */}
-      <Card className="border-2">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-text-dark dark:text-foreground">
-                {exam.title}
-              </h1>
-              <p className="text-text-medium mt-1">
-                Question {currentQuestion + 1} of {exam.questions.length}
-              </p>
-            </div>
-            
-            <div className="text-right">
-              <div className={`text-3xl font-bold ${timeLeft < 300 ? 'text-red-500' : 'text-forest'}`}>
-                <Clock className="w-6 h-6 inline mr-2" />
-                {formatTime(timeLeft)}
-              </div>
-              <p className="text-sm text-text-medium mt-1">
-                {answeredCount}/{exam.questions.length} answered
-              </p>
-              <Progress value={progress} className="h-2 mt-2" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold text-text-dark dark:text-foreground mb-2">
+            <span className="text-green-700">Exams</span> & Tests
+          </h1>
+          <p className="text-text-medium dark:text-muted-foreground">
+            Test your knowledge and track your progress
+          </p>
+        </div>
 
-      <div className="grid lg:grid-cols-4 gap-6">
-        {/* Question Navigator */}
-        <Card className="lg:col-span-1 h-fit">
-          <CardHeader>
-            <CardTitle className="text-sm">Questions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 lg:grid-cols-4 gap-2">
-              {exam.questions.map((q, index) => (
-                <button
-                  key={q._id}
-                  onClick={() => jumpToQuestion(index)}
-                  className={`
-                    w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all
-                    ${currentQuestion === index 
-                      ? 'bg-forest text-white' 
-                      : answers[q._id]?.trim()
-                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                        : 'bg-muted hover:bg-muted-foreground/10'
-                    }
-                  `}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-            
-            <div className="mt-4 space-y-2 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-forest" />
-                <span>Current</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-green-100 dark:bg-green-900" />
-                <span>Answered</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-muted" />
-                <span>Not answered</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Question Display */}
-        <div className="lg:col-span-3 space-y-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentQuestion}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle>Question {currentQuestion + 1}</CardTitle>
-                    {/* FIXED: Safe access to points */}
-                    <span className="text-sm text-text-medium">
-                      {(question?.points || 1)} point{(question?.points || 1) !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <p className="text-lg text-text-dark dark:text-foreground leading-relaxed">
-                    {question?.question}
-                  </p>
-
-                  {/* Answer Input */}
-                  {question?.type === 'multiple-choice' && question.options?.length > 0 ? (
-                    <RadioGroup
-                      value={answers[question._id] || ''}
-                      onValueChange={(value) => handleAnswerChange(question._id, value)}
-                    >
-                      <div className="space-y-3">
-                        {question.options.map((option, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-muted transition-colors"
-                          >
-                            <RadioGroupItem value={option} id={`option-${index}`} />
-                            <Label
-                              htmlFor={`option-${index}`}
-                              className="flex-1 cursor-pointer"
-                            >
-                              {option}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </RadioGroup>
-                  ) : question?.type === 'true-false' ? (
-                    <RadioGroup
-                      value={answers[question._id] || ''}
-                      onValueChange={(value) => handleAnswerChange(question._id, value)}
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-muted transition-colors">
-                          <RadioGroupItem value="true" id="true" />
-                          <Label htmlFor="true" className="flex-1 cursor-pointer">True</Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-muted transition-colors">
-                          <RadioGroupItem value="false" id="false" />
-                          <Label htmlFor="false" className="flex-1 cursor-pointer">False</Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  ) : (
-                    <div>
-                      <Label htmlFor="answer">Your Answer</Label>
-                      <Textarea
-                        id="answer"
-                        placeholder="Type your answer here..."
-                        value={answers[question?._id] || ''}
-                        onChange={(e) => handleAnswerChange(question?._id, e.target.value)}
-                        rows={4}
-                        className="mt-2"
-                      />
-                    </div>
-                  )}
-
-                  {/* Warning if not answered */}
-                  {!answers[question?._id]?.trim() && (
-                    <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <AlertCircle className="w-4 h-4 text-yellow-600" />
-                      <span className="text-sm text-yellow-700 dark:text-yellow-400">
-                        This question hasn't been answered yet
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between gap-4">
-            <Button
-              onClick={previousQuestion}
-              disabled={currentQuestion === 0}
-              variant="outline"
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Previous
-            </Button>
-
-            {!isLastQuestion ? (
-              <Button onClick={nextQuestion}>
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
+        <div className="flex gap-2">
+          <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Sparkles className="w-5 h-5" />
+                AI Generate
               </Button>
-            ) : (
-              <Button
-                onClick={() => setShowSubmitDialog(true)}
-                className="bg-gradient-to-r from-forest to-forest-light"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Submit Exam
-              </Button>
-            )}
-          </div>
+            </DialogTrigger>
+            <GenerateExamDialog 
+              onSuccess={() => {
+                setGenerateDialogOpen(false);
+                loadData();
+              }}
+              onClose={() => setGenerateDialogOpen(false)}
+            />
+          </Dialog>
+
+          <Button 
+            className="bg-gradient-to-r from-forest to-forest-light gap-2"
+            onClick={() => navigate('/exams/create')}
+          >
+            <Plus className="w-5 h-5" />
+            Create Exam
+          </Button>
         </div>
       </div>
 
-      {/* Submit Confirmation Dialog */}
-      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Submit Exam?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {answeredCount === exam.questions.length ? (
-                <>You've answered all {exam.questions.length} questions. Are you ready to submit?</>
-              ) : (
-                <>
-                  You've answered {answeredCount} out of {exam.questions.length} questions.{' '}
-                  <span className="font-semibold text-yellow-600">
-                    {exam.questions.length - answeredCount} question(s) are still unanswered.
-                  </span>
-                  {' '}Are you sure you want to submit?
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Review</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => handleSubmit(false)}
-              disabled={submitting}
-              className="bg-forest hover:bg-forest-light"
-            >
-              {submitting ? 'Submitting...' : 'Submit Exam'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid md:grid-cols-4 gap-4">
+          <StatsCard
+            title="Total Exams"
+            value={stats.totalExams || 0}
+            icon={GraduationCap}
+            color="blue"
+          />
+          <StatsCard
+            title="Average Score"
+            value={`${stats.averageScore || 0}%`}
+            icon={TrendingUp}
+            color="green"
+          />
+          <StatsCard
+            title="Passed"
+            value={stats.passedExams || 0}
+            icon={CheckCircle}
+            color="green"
+          />
+          <StatsCard
+            title="Best Score"
+            value={`${stats.bestScore || 0}%`}
+            icon={Trophy}
+            color="yellow"
+          />
+        </div>
+      )}
+
+      {/* Exams List */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full md:w-auto grid-cols-3">
+          <TabsTrigger value="all">All Exams</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-6">
+          {filteredExams.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredExams.map((exam) => (
+                <ExamCard
+                  key={exam._id}
+                  exam={exam}
+                  onStart={handleStartExam}
+                  onViewResults={handleViewResults}
+                  onDelete={handleDeleteExam}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <GraduationCap className="w-16 h-16 text-text-light mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">No exams yet</h3>
+                <p className="text-text-medium mb-4">
+                  Create your first exam or generate one with AI
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={() => navigate('/exams/create')}>
+                    Create Exam
+                  </Button>
+                  <Button variant="outline" onClick={() => setGenerateDialogOpen(true)}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Generate
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
-export default TakeExamPage;
+// Stats Card Component
+const StatsCard = ({ title, value, icon: Icon, color }) => {
+  const colorMap = {
+    blue: 'from-blue-500 to-blue-600',
+    green: 'from-green-500 to-green-600',
+    yellow: 'from-yellow-500 to-yellow-600',
+    red: 'from-red-500 to-red-600'
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`p-3 rounded-xl bg-gradient-to-br ${colorMap[color]}`}>
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+          <div className="text-3xl font-bold text-text-dark dark:text-foreground">
+            {value}
+          </div>
+        </div>
+        <div className="text-sm font-medium text-text-medium">{title}</div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Exam Card Component
+const ExamCard = ({ exam, onStart, onViewResults, onDelete }) => {
+  const statusColors = {
+    draft: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+    active: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    completed: 'bg-green-500/10 text-green-600 border-green-500/20',
+    graded: 'bg-green-500/10 text-green-600 border-green-500/20'
+  };
+
+  const isCompleted = exam.status === 'graded' || exam.status === 'completed';
+  const isPassed = exam.passed;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+    >
+      <Card className="h-full hover:shadow-lg transition-all">
+        <CardHeader>
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-forest/10 to-forest-light/10 rounded-lg">
+                <GraduationCap className="w-5 h-5 text-forest" />
+              </div>
+              {exam.isAIGenerated && (
+                <Badge variant="outline" className="gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  AI
+                </Badge>
+              )}
+            </div>
+            <Badge className={statusColors[exam.status]}>
+              {exam.status}
+            </Badge>
+          </div>
+          
+          <CardTitle className="text-xl line-clamp-2">{exam.title}</CardTitle>
+          
+          {exam.description && (
+            <CardDescription className="line-clamp-2">
+              {exam.description}
+            </CardDescription>
+          )}
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Exam Info */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-text-medium" />
+              <span className="text-text-medium">
+                {exam.questions?.length || 0} questions
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-text-medium" />
+              <span className="text-text-medium">{exam.timeLimit} min</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-text-medium" />
+              <span className="text-text-medium">
+                {new Date(exam.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+            {exam.difficulty && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {exam.difficulty}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Score Display (if completed) */}
+          {isCompleted && (
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Your Score</span>
+                <div className="flex items-center gap-2">
+                  {isPassed ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  )}
+                  <span className="text-2xl font-bold">{exam.score}%</span>
+                </div>
+              </div>
+              <Progress value={exam.score} className="h-2" />
+              <div className="text-xs text-text-medium mt-1">
+                {exam.correctAnswers}/{exam.totalQuestions} correct
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            {!isCompleted ? (
+              <Button
+                onClick={() => onStart(exam._id)}
+                className="flex-1 bg-gradient-to-r from-forest to-forest-light"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Exam
+              </Button>
+            ) : (
+              <Button
+                onClick={() => onViewResults(exam._id)}
+                variant="outline"
+                className="flex-1"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Results
+              </Button>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(exam._id)}
+            >
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
+export default ExamsPage;
