@@ -176,6 +176,14 @@ const TakeExamPage = () => {
   if (!exam) return null;
 
   const question = exam?.questions?.[currentQuestion];
+  if (!question) {
+    return (
+      <div className="text-center py-10">
+        <p>Loading question...</p>
+      </div>
+    );
+  }
+  
   const isLastQuestion = currentQuestion === exam?.questions?.length - 1;
   
   return (
@@ -266,23 +274,23 @@ const TakeExamPage = () => {
                   <div className="flex items-start justify-between">
                     <CardTitle>Question {currentQuestion + 1}</CardTitle>
                     <span className="text-sm text-text-medium">
-                      {question.points || 1} point{question.points !== 1 ? 's' : ''}
+                      {question?.points || 1} point{question?.points !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-lg text-text-dark dark:text-foreground leading-relaxed">
-                    {question.question}
+                    {question?.question}
                   </p>
 
                   {/* Answer Input */}
-                  {question.type === 'multiple-choice' && question.options?.length > 0 ? (
+                  {question?.type === 'multiple-choice' && question?.options?.length > 0 ? (
                     <RadioGroup
                       value={answers[question._id] || ''}
                       onValueChange={(value) => handleAnswerChange(question._id, value)}
                     >
                       <div className="space-y-3">
-                        {question.options.map((option, index) => (
+                        {question?.options?.map((option, index) => (
                           <div
                             key={index}
                             className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-muted transition-colors"
@@ -298,7 +306,7 @@ const TakeExamPage = () => {
                         ))}
                       </div>
                     </RadioGroup>
-                  ) : question.type === 'true-false' ? (
+                  ) : question?.type === 'true-false' ? (
                     <RadioGroup
                       value={answers[question._id] || ''}
                       onValueChange={(value) => handleAnswerChange(question._id, value)}
