@@ -1,13 +1,10 @@
-// server/controllers/flashcardsController.js - FIXED
+// server/controllers/flashcardsController.js
 import Flashcard from '../models/Flashcard.js';
 import Topic from '../models/Topic.js';
 import Note from '../models/Note.js';
 import aiService from '../services/aiService.js';
 import { gamificationService } from '../services/gamificationService.js';
 import { catchAsync } from '../middleware/errorHandler.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
 /**
  * POST /api/flashcards
@@ -17,7 +14,9 @@ export const createFlashcard = catchAsync(async (req, res) => {
   const { front, back, topic, tags, difficulty } = req.body;
 
   if (!front || !back) {
-    return res.status(400).json({ message: 'Front and back are required' });
+    return res.status(400).json({ 
+      message: 'Front and back are required' 
+    });
   }
 
   const flashcard = await Flashcard.create({
@@ -48,46 +47,58 @@ export const generateFlashcards = catchAsync(async (req, res) => {
 
   if (topicId) {
     const topic = await Topic.findById(topicId);
-    if (!topic) return res.status(404).json({ message: 'Topic not found' });
-    content = `${topic.name}: ${topic.description || ''}`;
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+    content = `${topic.name}: ${topic.description}`;
     topicRef = topicId;
     tags = [topic.subject];
   } else if (noteId) {
     const note = await Note.findById(noteId);
-    if (!note) return res.status(404).json({ message: 'Note not found' });
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
     content = note.content;
     topicRef = note.topic;
     tags = note.tags || [];
   } else {
-    return res.status(400).json({ message: 'Either topicId or noteId is required' });
+    return res.status(400).json({ 
+      message: 'Either topicId or noteId is required' 
+    });
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-  const prompt = `Create ${count} high-quality flashcards from this content. Return ONLY a JSON array:
+  // Use AI to generate flashcards
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  
+  const prompt = `Create ${count} flashcards from this content. Each flashcard should have a clear question/prompt on the front and a concise answer on the back.
 
 Content:
 ${content}
 
-Format:
+Return ONLY a JSON array in this exact format:
 [
   {
     "front": "Question or prompt here?",
     "back": "Clear, concise answer here",
-    "difficulty": "easy" | "medium" | "hard"
+    "difficulty": "easy" or "medium" or "hard"
   }
-]`;
+]
+
+Make the flashcards effective for memorization and testing knowledge.`;
 
   try {
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
-
+    
+    // Extract JSON
     const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || 
+                     responseText.match(/```\n([\s\S]*?)\n```/) ||
                      responseText.match(/\[[\s\S]*\]/);
     const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : responseText;
-
+    
     const flashcardsData = JSON.parse(jsonText);
 
+    // Create flashcards in database
     const flashcards = await Flashcard.insertMany(
       flashcardsData.map(fc => ({
         user: req.user._id,
@@ -101,7 +112,10 @@ Format:
       }))
     );
 
-    res.status(201).json({ flashcards, count: flashcards.length });
+    res.status(201).json({ 
+      flashcards,
+      count: flashcards.length 
+    });
   } catch (error) {
     console.error('Failed to generate flashcards:', error);
     res.status(500).json({ message: 'Failed to generate flashcards' });
@@ -116,6 +130,7 @@ export const getFlashcards = catchAsync(async (req, res) => {
   const { topic, tags, limit = 50 } = req.query;
 
   const filter = { user: req.user._id };
+  
   if (topic) filter.topic = topic;
   if (tags) filter.tags = { $in: tags.split(',') };
 
@@ -129,7 +144,7 @@ export const getFlashcards = catchAsync(async (req, res) => {
 
 /**
  * GET /api/flashcards/due
- * Get flashcards due for review
+ * Get flashcards due for review (spaced repetition)
  */
 export const getDueFlashcards = catchAsync(async (req, res) => {
   const { limit = 20 } = req.query;
@@ -142,18 +157,40 @@ export const getDueFlashcards = catchAsync(async (req, res) => {
     .sort({ nextReview: 1 })
     .limit(parseInt(limit));
 
-  res.json({ flashcards, count: flashcards.length });
+  res.json({ 
+    flashcards,
+    count: flashcards.length
+  });
+});
+
+/**
+ * GET /api/flashcards/:id
+ * Get single flashcard
+ */
+export const getFlashcardById = catchAsync(async (req, res) => {
+  const flashcard = await Flashcard.findOne({
+    _id: req.params.id,
+    user: req.user._id
+  }).populate('topic', 'name subject');
+
+  if (!flashcard) {
+    return res.status(404).json({ message: 'Flashcard not found' });
+  }
+
+  res.json({ flashcard });
 });
 
 /**
  * POST /api/flashcards/:id/review
- * Review a flashcard + track gamification
+ * Review a flashcard (spaced repetition)
  */
 export const reviewFlashcard = catchAsync(async (req, res) => {
-  const { quality } = req.body;
+  const { quality } = req.body; // 0-5 scale
 
   if (quality === undefined || quality < 0 || quality > 5) {
-    return res.status(400).json({ message: 'Quality must be between 0 and 5' });
+    return res.status(400).json({ 
+      message: 'Quality must be between 0 and 5' 
+    });
   }
 
   const flashcard = await Flashcard.findOne({
@@ -168,10 +205,9 @@ export const reviewFlashcard = catchAsync(async (req, res) => {
   // Update using SM-2 algorithm
   await flashcard.reviewCard(quality);
 
-  // Track gamification activity
+  // After flashcard review
   await gamificationService.trackActivity(req.user._id, 'flashcard_reviewed', {
-    mastered: flashcard.repetitions >= 5,
-    quality
+    mastered: flashcard.repetitions >= 5
   });
 
   res.json({ 
@@ -232,9 +268,9 @@ export const getFlashcardStats = catchAsync(async (req, res) => {
   const flashcards = await Flashcard.find({ user: req.user._id });
 
   const dueToday = flashcards.filter(fc => fc.nextReview <= new Date()).length;
-  const totalReviews = flashcards.reduce((sum, fc) => sum + (fc.timesReviewed || 0), 0);
+  const totalReviews = flashcards.reduce((sum, fc) => sum + fc.timesReviewed, 0);
   const averageQuality = flashcards.length > 0
-    ? flashcards.reduce((sum, fc) => sum + (fc.averageQuality || 0), 0) / flashcards.length
+    ? flashcards.reduce((sum, fc) => sum + fc.averageQuality, 0) / flashcards.length
     : 0;
 
   const stats = {
@@ -249,3 +285,7 @@ export const getFlashcardStats = catchAsync(async (req, res) => {
 
   res.json({ stats });
 });
+
+// Import GoogleGenerativeAI at the top
+import { GoogleGenerativeAI } from '@google/generative-ai';
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
