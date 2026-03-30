@@ -4,7 +4,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://tlearnapp.onrender.com/api' || 'http://localhost:3000/api',
   withCredentials: true,
-  timeout: 15000,
+  timeout: 60000,
 });
 
 // Request interceptor - Add Authorization token
