@@ -47,11 +47,23 @@ const SessionDetailPage = () => {
   };
 
   const handleRetry = async () => {
+    if (!session?.topic?._id) {
+      toast.error("Cannot retry: Topic information is missing");
+      return;
+    }
+
+    setRetryLoading(true);
     try {
+      // Call retry service
       await sessionService.retry(session.topic._id);
+      
+      toast.success("Starting retry session...");
       navigate(`/teach/${session.topic._id}`);
     } catch (error) {
-      toast.error('Failed to start retry');
+      console.error("Retry failed:", error);
+      toast.error(error.message || "Failed to start retry. Please try again.");
+    } finally {
+      setRetryLoading(false);
     }
   };
 
