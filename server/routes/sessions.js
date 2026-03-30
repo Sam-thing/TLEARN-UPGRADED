@@ -174,6 +174,7 @@ router.get('/topic/:topicId', protect, async (req, res) => {
 });
 
 // Retry session for a topic
+// Retry session for a topic - FIXED
 router.post('/retry/:topicId', protect, catchAsync(async (req, res) => {
   const { topicId } = req.params;
 
@@ -182,18 +183,27 @@ router.post('/retry/:topicId', protect, catchAsync(async (req, res) => {
     return res.status(404).json({ message: 'Topic not found' });
   }
 
-  // Create a new empty session for retry
+  // Create a new session for retry
   const session = await Session.create({
     user: req.user.id,
     topic: topicId,
-    transcript: '',
+    transcript: "Retry session - transcript will be recorded",   // ← Provide a valid string
+    originalTranscript: "",
     duration: 0,
     status: 'pending',
     feedback: {
       score: 0,
       strengths: [],
       improvements: [],
-      summary: 'Retry session started'
+      summary: 'New retry session started. Record your explanation again.',
+      accuracyScore: 0,
+      clarityScore: 0,
+      confidenceScore: 0
+    },
+    analysis: {
+      wordCount: 0,
+      fillerWords: 0,
+      wordsPerMin: 0
     }
   });
 
@@ -201,7 +211,7 @@ router.post('/retry/:topicId', protect, catchAsync(async (req, res) => {
 
   res.status(201).json({ 
     session,
-    message: 'Retry session created successfully' 
+    message: 'Retry session created successfully. You can now record again.' 
   });
 }));
 
