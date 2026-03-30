@@ -77,11 +77,11 @@ const TakeExamPage = () => {
   const loadExam = async () => {
     try {
       const data = await examService.getById(id);
-      setExam(data.exam);
-      
-      // Initialize answers object
+      setExam(data.exam || data);
+
+      // Initialize answers
       const initialAnswers = {};
-      data.exam.questions.forEach(q => {
+      (data.exam?.questions || data.questions || []).forEach(q => {
         initialAnswers[q._id] = '';
       });
       setAnswers(initialAnswers);
@@ -125,7 +125,7 @@ const TakeExamPage = () => {
   };
 
   const nextQuestion = () => {
-    if (currentQuestion < exam.questions.length - 1) {
+    if (currentQuestion < (exam?.questions?.length || 0) - 1) {
       setCurrentQuestion(prev => prev + 1);
     }
   };
@@ -250,7 +250,7 @@ const TakeExamPage = () => {
                   <div className="flex items-start justify-between">
                     <CardTitle>Question {currentQuestion + 1}</CardTitle>
                     <span className="text-sm text-text-medium">
-                      {question.points} point{question.points !== 1 ? 's' : ''}
+                      {question.points || 1} point{question.points !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </CardHeader>
