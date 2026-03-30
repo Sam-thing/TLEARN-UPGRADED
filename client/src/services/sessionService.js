@@ -46,5 +46,14 @@ export const sessionService = {
   async getStats() {
     const response = await api.get('/sessions/stats');
     return response.stats || response;
+  },
+
+  async retry(topicId) {
+    if (!topicId) {
+      throw new Error("Topic ID is required to retry");
+    }
+
+    const response = await api.post(`/sessions/retry/${topicId}`);
+    return response.session || response.data || response;
   }
 };
