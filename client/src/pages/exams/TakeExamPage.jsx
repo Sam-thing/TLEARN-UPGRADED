@@ -176,14 +176,6 @@ const TakeExamPage = () => {
   if (!exam) return null;
 
   const question = exam?.questions?.[currentQuestion];
-  if (!question) {
-    return (
-      <div className="text-center py-10">
-        <p>Loading question...</p>
-      </div>
-    );
-  }
-  
   const isLastQuestion = currentQuestion === exam?.questions?.length - 1;
   
   return (
