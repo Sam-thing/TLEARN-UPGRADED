@@ -173,4 +173,36 @@ router.get('/topic/:topicId', protect, async (req, res) => {
   }
 });
 
+// Retry session for a topic
+router.post('/retry/:topicId', protect, catchAsync(async (req, res) => {
+  const { topicId } = req.params;
+
+  const topic = await Topic.findById(topicId);
+  if (!topic) {
+    return res.status(404).json({ message: 'Topic not found' });
+  }
+
+  // Create a new empty session for retry
+  const session = await Session.create({
+    user: req.user.id,
+    topic: topicId,
+    transcript: '',
+    duration: 0,
+    status: 'pending',
+    feedback: {
+      score: 0,
+      strengths: [],
+      improvements: [],
+      summary: 'Retry session started'
+    }
+  });
+
+  await session.populate('topic', 'name subject');
+
+  res.status(201).json({ 
+    session,
+    message: 'Retry session created successfully' 
+  });
+}));
+
 export default router;
