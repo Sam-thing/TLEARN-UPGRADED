@@ -29,6 +29,7 @@ const SessionDetailPage = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [retryLoading, setRetryLoading] = useState(false);
 
   useEffect(() => {
     loadSession();
@@ -283,9 +284,19 @@ const SessionDetailPage = () => {
           onClick={handleRetry}
           className="flex-1 bg-gradient-to-r from-forest to-forest-light"
         >
-          <RefreshCw className="w-5 h-5 mr-2" />
-          Retry This Topic
+          {retryLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Starting Retry...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-5 h-5 mr-2" />
+              Retry This Topic
+            </>
+          )}
         </Button>
+        
         <Button variant="outline">
           <Share2 className="w-5 h-5 mr-2" />
           Share
