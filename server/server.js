@@ -32,7 +32,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { setupSocket }  from './socket/index.js';
 
 dotenv.config();
-dns.setServers(['8.8.8.8']);
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 console.log("GROQ_API_KEY loaded:", process.env.GROQ_API_KEY ? "Yes" : "No");
 
@@ -154,7 +154,10 @@ app.use(errorHandler);
 
 // ── Connect & Start ────────────────────────────────────
 mongoose
-  .connect(process.env.MONGODB_URI_UPGRADED || process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI_UPGRADED || process.env.MONGODB_URI, {
+    family: 4,
+    serverSelectionTimeoutMS: 10000
+  })
   .then(() => {
     console.log('✅  MongoDB connected');
     const PORT = process.env.PORT || 5000;
