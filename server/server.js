@@ -169,3 +169,11 @@ mongoose
     console.error('❌  MongoDB error:', err.message);
     process.exit(1);
   });
+
+  process.on('uncaughtException', (err) => {
+    console.error('💥 Uncaught Exception:', err);
+  });
+
+  process.on('unhandledRejection', (err) => {
+    console.error('💥 Unhandled Rejection:', err);
+  });
