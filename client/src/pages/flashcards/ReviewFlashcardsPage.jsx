@@ -65,16 +65,34 @@ const ReviewFlashcardsPage = () => {
 
     try {
       const currentCard = flashcards[currentIndex];
-      await flashcardService.review(currentCard._id, mappedQuality);
 
-      // Update session stats
+      //  Capture response
+      const response = await flashcardService.review(currentCard._id, mappedQuality);
+
+      //  GAMIFICATION
+      if (response?.gamification && response.gamification.xpAwarded > 0) {
+        const { xpAwarded, leveledUp, newLevel } = response.gamification;
+
+        // Small XP toast
+        toast.success(`+${xpAwarded} XP`, { duration: 2000 });
+
+        // Only show level up (keep it minimal)
+        if (leveledUp) {
+          toast.success(
+            `🎉 Level Up! Level ${newLevel}!`,
+            { duration: 5000 }
+          );
+        }
+      }
+
+      //  existing session stats 
       setSessionStats(prev => ({
         ...prev,
         reviewed: prev.reviewed + 1,
         correct: quality >= 2 ? prev.correct + 1 : prev.correct
       }));
 
-      // Move to next card
+      //  navigation logic 
       if (currentIndex < flashcards.length - 1) {
         setCurrentIndex(prev => prev + 1);
         setFlipped(false);
@@ -82,6 +100,7 @@ const ReviewFlashcardsPage = () => {
         // Session complete!
         handleSessionComplete();
       }
+
     } catch (error) {
       toast.error('Failed to save review');
     } finally {

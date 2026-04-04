@@ -122,10 +122,43 @@ const TakeExamPage = () => {
         answer: answer.trim()
       }));
 
-      await examService.submit(id, formattedAnswers);
-      
-      toast.success(autoSubmit ? 'Time\'s up! Exam auto-submitted' : 'Exam submitted successfully!');
+      //  Capture response 
+      const response = await examService.submit(id, formattedAnswers);
+
+      // GAMIFICATION 
+      if (response?.gamification) {
+        const { xpAwarded, activityDescription, leveledUp, newLevel, newAchievements } = response.gamification;
+
+        // XP toast
+        toast.success(
+          `+${xpAwarded} XP - ${activityDescription}`,
+          { duration: 5000 }
+        );
+
+        // Level up
+        if (leveledUp) {
+          toast.success(
+            `🎉 Level Up! You're now Level ${newLevel}!`,
+            { duration: 10000 }
+          );
+        }
+
+        // Achievements
+        if (newAchievements?.length) {
+          newAchievements.forEach((achievement) => {
+            toast.success(
+              `🏆 Achievement Unlocked: ${achievement.title} (+${achievement.xpReward} XP)`,
+              { duration: 8000 }
+            );
+          });
+        }
+      }
+
+      // ✅ Keep your original success message
+      toast.success(autoSubmit ? "Time's up! Exam auto-submitted" : 'Exam submitted successfully!');
+
       navigate(`/exams/${id}/results`);
+
     } catch (error) {
       toast.error('Failed to submit exam');
       setSubmitting(false);

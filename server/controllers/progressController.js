@@ -99,12 +99,12 @@ export const deleteGoal = catchAsync(async (req, res) => {
   res.json({ message: 'Goal deleted' });
 });
 
-// ✅ CHECK MILESTONES - Call this after session creation
+//  CHECK MILESTONES 
 export const checkMilestones = async (userId) => {
   try {
     const user = await User.findById(userId);
     const sessions = await Session.find({ user: userId, status: 'analyzed' });
-    
+   
     // Check for milestone achievements
     const milestones = [
       { count: 1, title: '🎯 First Session Complete!' },
@@ -114,10 +114,10 @@ export const checkMilestones = async (userId) => {
       { count: 50, title: '🏆 50 Sessions - Master Learner!' },
       { count: 100, title: '👑 100 Sessions - Teaching Legend!' }
     ];
-    
+   
     const sessionCount = sessions.length;
     const milestone = milestones.find(m => m.count === sessionCount);
-    
+   
     if (milestone) {
       await notificationService.achievementUnlocked(
         userId,
@@ -126,20 +126,47 @@ export const checkMilestones = async (userId) => {
       );
       console.log(`✉️ Milestone notification sent: ${milestone.title}`);
     }
-    
-    // Check for streak achievements
-    if (user.streak.current === 7) {
-      await notificationService.achievementUnlocked(
+ 
+    // ── STREAK TRACKING WITH GAMIFICATION ──────────────────
+    const lastSession = sessions[sessions.length - 1];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+   
+    // Check if continuing streak
+    if (lastSession && lastSession.createdAt >= yesterday) {
+      user.stats = user.stats || {};
+      user.stats.streak = user.stats.streak || { current: 0, longest: 0, lastActivity: null };
+      
+      user.stats.streak.current += 1;
+      user.stats.streak.lastActivity = new Date();
+      
+      // Update longest streak
+      if (user.stats.streak.current > user.stats.streak.longest) {
+        user.stats.streak.longest = user.stats.streak.current;
+      }
+   
+      await user.save();
+   
+      // ✅ AWARD XP FOR CONTINUING STREAK
+      await gamificationService.trackActivity(
         userId,
-        '🔥 7-Day Streak!',
-        'streak_7'
+        'streak_continued'
       );
-    } else if (user.streak.current === 30) {
-      await notificationService.achievementUnlocked(
-        userId,
-        '🔥 30-Day Streak - Unstoppable!',
-        'streak_30'
-      );
+   
+      // Check for streak achievements (7, 30 days)
+      if (user.stats.streak.current === 7) {
+        await notificationService.achievementUnlocked(
+          userId,
+          '🔥 7-Day Streak!',
+          'streak_7'
+        );
+      } else if (user.stats.streak.current === 30) {
+        await notificationService.achievementUnlocked(
+          userId,
+          '🔥 30-Day Streak - Unstoppable!',
+          'streak_30'
+        );
+      }
     }
   } catch (error) {
     console.error('Error checking milestones:', error);

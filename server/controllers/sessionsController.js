@@ -4,7 +4,7 @@ import Topic from '../models/Topic.js';
 import User from '../models/User.js';
 import aiService from '../services/aiService.js';
 import notificationService from '../services/notificationService.js';
-import { gamificationService } from '../services/gamificationService.js';
+import gamificationService from '../services/gamificationService.js';
 import { checkMilestones } from './progressController.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 
@@ -26,6 +26,15 @@ export const createSession = catchAsync(async (req, res) => {
   // In sessionsController.js after creating session
   await gamificationService.trackActivity(req.user._id, 'session_completed', {
     duration: session.duration
+  });
+
+  res.json({
+    session,
+    gamification: {
+      xpAwarded: gamificationResult.xpAwarded,
+      leveledUp: gamificationResult.leveledUp,
+      newAchievements: gamificationResult.newAchievements
+    }
   });
 
   // Get topic details
@@ -128,7 +137,7 @@ export const createSession = catchAsync(async (req, res) => {
 
   console.log('✅ User stats updated');
 
-  // ✅ STEP 5: Send notification
+  //  STEP 5: Send notification
   try {
     await notificationService.sessionCompleted(
       req.user._id,
