@@ -205,14 +205,30 @@ export const reviewFlashcard = catchAsync(async (req, res) => {
   // Update using SM-2 algorithm
   await flashcard.reviewCard(quality);
 
-  // After flashcard review
-  await gamificationService.trackActivity(req.user._id, 'flashcard_reviewed', {
-    mastered: flashcard.repetitions >= 5
-  });
-
-  res.json({ 
+  flashcard.timesReviewed += 1;
+  if (quality >= 4) {
+    flashcard.timesCorrect += 1;
+  }
+  
+  // Check if mastered (5+ correct reviews)
+  const isMastered = flashcard.timesCorrect >= 5;
+  
+  await flashcard.save();
+  
+  // Award XP for review
+  const gamificationResult = await gamificationService.trackActivity(
+    req.user._id,
+    'flashcard_reviewed',
+    { mastered: isMastered }
+  );
+  
+  res.json({
     flashcard,
-    message: quality >= 4 ? 'Great job!' : quality >= 3 ? 'Good!' : 'Keep practicing!'
+    gamification: {
+      xpAwarded: gamificationResult.xpAwarded,
+      leveledUp: gamificationResult.leveledUp,
+      newAchievements: gamificationResult.newAchievements
+    }
   });
 });
 

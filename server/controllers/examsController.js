@@ -192,9 +192,30 @@ export const submitExam = catchAsync(async (req, res) => {
   }
 
   // After exam submission
-  await gamificationService.trackActivity(req.user._id, 'exam_completed', {
-    passed: exam.passed,
-    score: exam.score
+  exam.status = 'graded';
+  exam.score = calculateScore(exam);
+  exam.passed = exam.score >= 60;
+  await exam.save();
+  
+  // Award XP for exam completion
+  const gamificationResult = await gamificationService.trackActivity(
+    req.user._id,
+    'exam_completed',
+    {
+      passed: exam.passed,
+      score: exam.score
+    }
+  );
+  
+  res.json({
+    exam,
+    gamification: {
+      xpAwarded: gamificationResult.xpAwarded,
+      activityDescription: gamificationResult.activityDescription,
+      leveledUp: gamificationResult.leveledUp,
+      newLevel: gamificationResult.newLevel,
+      newAchievements: gamificationResult.newAchievements
+    }
   });
 
   // Grade the exam
@@ -221,21 +242,6 @@ export const submitExam = catchAsync(async (req, res) => {
   await exam.save();
   await exam.populate('topics', 'name subject');
 
-  //Track gamification activity
-  try {
-    await gamificationService.trackActivity(req.user._id, 'exam_completed', {
-      passed: exam.passed,
-      score: exam.score
-    });
-    console.log('✅ Gamification activity tracked');
-  } catch (error) {
-    console.error('❌ Gamification tracking failed:', error.message);
-  }
-
-  res.json({ 
-    exam,
-    message: `Exam completed! Score: ${exam.score}%`
-  });
 });
 
 /**

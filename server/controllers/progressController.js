@@ -1,9 +1,10 @@
 // controllers/progressController.js - WITH NOTIFICATIONS
 import Session from '../models/Session.js';
 import User from '../models/User.js';
-import Goal from '../models/Goal.js';  // ← Add this if you have a Goal model
+import Goal from '../models/Goal.js';  
 import notificationService from '../services/notificationService.js';
 import { catchAsync } from '../middleware/errorHandler.js';
+import gamificationService from '../services/gamificationService.js';
 
 // GET /api/progress
 export const getProgress = catchAsync(async (req, res) => {
@@ -69,7 +70,7 @@ export const createGoal = catchAsync(async (req, res) => {
   res.status(201).json({ goal });
 });
 
-// ✅ PUT /api/progress/goals/:id - Update goal (with achievement notification)
+//  PUT /api/progress/goals/:id - Update goal
 export const updateGoal = catchAsync(async (req, res) => {
   const oldGoal = await Goal.findById(req.params.id);
   

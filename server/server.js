@@ -57,36 +57,51 @@ export const io = new Server(httpServer, {
 setupSocket(io);
 
 // Setup chat socket functionality - PASS THE EXISTING io INSTANCE
-initializeSocket(io);  // ← Changed from httpServer to io
+initializeSocket(io);
 console.log('🔌 Chat Socket.io initialized');
 
-// ── Middleware ─────────────────────────────────────────
-app.use(helmet());
+// ── ALLOWED ORIGINS ────────────────────────────────────
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://tlearn-upgraded.vercel.app",
   "https://tlearnapp.onrender.com",
   process.env.CLIENT_URL
-];
+].filter(Boolean); // Remove undefined/null
 
+// ── CRITICAL: CORS MUST BE BEFORE HELMET ──────────────
 app.use(cors({
   origin: function (origin, callback) {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.endsWith(".vercel.app")
-    ) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list or ends with .vercel.app
+    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
       callback(null, true);
     } else {
+      console.log('❌ CORS rejected origin:', origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+// Handle preflight OPTIONS requests
+app.options('*', cors());
+
+// ── NOW helmet (after CORS) ────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+}));
+
+// ── Other Middleware ───────────────────────────────────
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Create upload directory if it doesn't exist ────────
 import path from 'path';
@@ -100,7 +115,7 @@ if (!fs.existsSync(uploadDir)) {
 
 // ── Serve uploaded files as static with CORS ──────────────────────
 app.use('/uploaded', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'http://localhost:5173');
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
@@ -129,13 +144,13 @@ app.use('/api/notifications', notificationRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
+
 app.get('/', (_req, res) => {
   res.send('TLearn API running');
 });
 
 // ── Error handler ──────────────────────────────────────
 app.use(errorHandler);
-
 
 // ── Connect & Start ────────────────────────────────────
 mongoose
@@ -147,6 +162,7 @@ mongoose
       console.log(`🚀  Server → http://localhost:${PORT}`);
       console.log(`📁  Uploads available at → http://localhost:${PORT}/uploaded`);
       console.log(`💬  Chat system ready`);
+      console.log(`🌐  CORS enabled for:`, allowedOrigins);
     });
   })
   .catch((err) => {
