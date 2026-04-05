@@ -61,12 +61,12 @@ export const createSession = catchAsync(async (req, res) => {
   ).length;
   const wordsPerMin = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
 
-  // Create session with AI feedback
+  // ✅ CREATE SESSION FIRST (before using it!)
   const session = await Session.create({
     user: req.user._id,
     topic: topicId,
-    transcript: correctedTranscript, // Save corrected version
-    originalTranscript: transcript, // Keep original too
+    transcript: correctedTranscript,
+    originalTranscript: transcript,
     duration: duration || 0,
     audioUrl,
     feedback: {
@@ -99,12 +99,10 @@ export const createSession = catchAsync(async (req, res) => {
   user.stats.totalSessions += 1;
   user.stats.totalMinutes += duration || 0;
   
-  // Update average score
   const allSessions = await Session.find({ user: req.user._id, status: 'analyzed' });
   const totalScore = allSessions.reduce((sum, s) => sum + (s.feedback?.score || 0), 0);
   user.stats.averageScore = allSessions.length > 0 ? Math.round(totalScore / allSessions.length) : 0;
   
-  // Update streak
   const today = new Date().toISOString().split('T')[0];
   const lastSessionDate = user.stats.lastSessionDate?.toISOString().split('T')[0];
   
@@ -123,7 +121,7 @@ export const createSession = catchAsync(async (req, res) => {
 
   console.log('✅ User stats updated');
 
-  //  STEP 5: Send notification
+  // ✅ STEP 5: Send notification
   try {
     await notificationService.sessionCompleted(
       req.user._id,
@@ -134,7 +132,6 @@ export const createSession = catchAsync(async (req, res) => {
     console.log('✅ Notification sent');
   } catch (error) {
     console.error('❌ Notification failed:', error.message);
-    // Don't fail the whole request if notification fails
   }
 
   // ✅ STEP 6: Check for milestone achievements
@@ -145,24 +142,33 @@ export const createSession = catchAsync(async (req, res) => {
     console.error('❌ Milestone check failed:', error.message);
   }
 
-  // ✅ STEP 7: Track gamification activity
+  // ✅ STEP 7: Track gamification activity (MOVED HERE - after session is created)
+  let gamificationResult = null;
   try {
-    await gamificationService.trackActivity(req.user._id, 'session_completed', {
-      duration: session.duration
-    });
+    gamificationResult = await gamificationService.trackActivity(
+      req.user._id, 
+      'session_completed', 
+      { duration: session.duration }
+    );
     console.log('✅ Gamification activity tracked');
   } catch (error) {
     console.error('❌ Gamification tracking failed:', error.message);
   }
-
 
   // Populate topic details for response
   await session.populate('topic', 'name subject');
 
   console.log('🎉 Session creation complete!');
 
+  // ✅ Send response with gamification data
   res.status(201).json({ 
     session,
+    gamification: gamificationResult ? {
+      xpAwarded: gamificationResult.xpAwarded,
+      leveledUp: gamificationResult.leveledUp,
+      newLevel: gamificationResult.newLevel,
+      newAchievements: gamificationResult.newAchievements
+    } : null,
     message: 'Session analyzed successfully'
   });
 });
