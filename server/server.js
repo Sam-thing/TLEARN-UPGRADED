@@ -154,8 +154,6 @@ app.use(errorHandler);
 
 // ── Connect & Start ────────────────────────────────────
 console.log('🔍 Attempting MongoDB connection...');
-console.log('📍 Host:', process.env.MONGODB_URI_UPGRADED?.split('@')[1]?.split('/')[0]);
-console.log('🗄️  Database:', process.env.MONGODB_URI_UPGRADED?.split('/').pop()?.split('?')[0]);
 
 mongoose
   .connect(process.env.MONGODB_URI_UPGRADED || process.env.MONGODB_URI, {
@@ -189,7 +187,7 @@ mongoose
     } else {
       console.error('⚠️  This is a NETWORK/CONNECTION error');
     }
-    
+
     process.exit(1);
   });
 
