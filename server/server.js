@@ -153,6 +153,10 @@ app.get('/', (_req, res) => {
 app.use(errorHandler);
 
 // ── Connect & Start ────────────────────────────────────
+console.log('🔍 Attempting MongoDB connection...');
+console.log('📍 Host:', process.env.MONGODB_URI_UPGRADED?.split('@')[1]?.split('/')[0]);
+console.log('🗄️  Database:', process.env.MONGODB_URI_UPGRADED?.split('/').pop()?.split('?')[0]);
+
 mongoose
   .connect(process.env.MONGODB_URI_UPGRADED || process.env.MONGODB_URI, {
     family: 4,
@@ -162,6 +166,9 @@ mongoose
     console.log('✅  MongoDB connected');
     const PORT = process.env.PORT || 5000;
     httpServer.listen(PORT, () => {
+      console.log('✅  MongoDB connected SUCCESSFULLY!');
+      console.log('📍  Connected to host:', mongoose.connection.host);
+      console.log('🗄️  Using database:', mongoose.connection.name);
       console.log(`🚀  Server → http://localhost:${PORT}`);
       console.log(`📁  Uploads available at → http://localhost:${PORT}/uploaded`);
       console.log(`💬  Chat system ready`);
@@ -170,6 +177,19 @@ mongoose
   })
   .catch((err) => {
     console.error('❌  MongoDB error:', err.message);
+    console.error('❌  MongoDB connection FAILED');
+    console.error('🔍  Error name:', err.name);
+    console.error('🔍  Error message:', err.message);
+
+    // Check if it's an auth error vs network error
+    if (err.message.includes('authentication')) {
+      console.error('⚠️  This is an AUTHENTICATION error - check username/password');
+    } else if (err.message.includes('IP')) {
+      console.error('⚠️  This is an IP WHITELIST error');
+    } else {
+      console.error('⚠️  This is a NETWORK/CONNECTION error');
+    }
+    
     process.exit(1);
   });
 
