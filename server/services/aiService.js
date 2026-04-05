@@ -30,7 +30,7 @@ class AIService {
   async addPunctuation(text) {
     try {
       const genAIClient = getGenAI();
-      const model = genAIClient.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAIClient.getGenerativeModel({ model: "gemini-2.5-flash" });
 
       const prompt = `Add proper punctuation, capitalization, paragraph breaks to this transcript. Return ONLY the corrected text:
 
