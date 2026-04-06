@@ -143,7 +143,7 @@ const CreateFlashcardDialog = ({ onSuccess, onClose }) => {
               <SelectValue placeholder="Select a topic" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {topics.map((topic) => (
                 <SelectItem key={topic._id} value={topic._id}>
                   {topic.name} - {topic.subject}

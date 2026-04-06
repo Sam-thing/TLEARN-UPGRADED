@@ -5,6 +5,16 @@ import aiService from '../services/aiService.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 import gamificationService from '../services/gamificationService.js';
 
+// Add this helper function at the top of examsController.js
+const calculateScore = (exam) => {
+  if (!exam.questions || exam.questions.length === 0) return 0;
+  
+  const correctAnswers = exam.questions.filter(q => q.isCorrect).length;
+  const totalQuestions = exam.questions.length;
+  
+  return Math.round((correctAnswers / totalQuestions) * 100);
+};
+
 /**
  * POST /api/exams
  * Create a new exam
@@ -191,10 +201,32 @@ export const submitExam = catchAsync(async (req, res) => {
     return res.status(400).json({ message: 'Exam already submitted' });
   }
 
+  // Grade each question
+  exam.questions.forEach((question, index) => {
+    const userAnswer = answers[index];
+    question.userAnswer = userAnswer;
+    
+    if (question.type === 'multiple-choice') {
+      question.isCorrect = userAnswer === question.correctAnswer;
+    } else if (question.type === 'true-false') {
+      question.isCorrect = userAnswer === question.correctAnswer;
+    } else {
+      // Short answer - simple exact match (you can improve this)
+      question.isCorrect = userAnswer?.toLowerCase().trim() === 
+                          question.correctAnswer?.toLowerCase().trim();
+    }
+  });
+
   // After exam submission
   exam.status = 'graded';
   exam.score = calculateScore(exam);
   exam.passed = exam.score >= 60;
+  exam.submittedAt = new Date();
+
+  // Count correct/incorrect
+  exam.correctAnswers = exam.questions.filter(q => q.isCorrect).length;
+  exam.totalQuestions = exam.questions.length;
+  
   await exam.save();
   
   // Award XP for exam completion
