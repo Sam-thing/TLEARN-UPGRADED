@@ -102,7 +102,7 @@ const DashboardLayout = () => {
         <div className="h-16 flex items-center justify-between px-6 border-b border-[oklch(0.91_0.004_240)] dark:border-[oklch(1_0_0/9%)]">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-[oklch(0.62_0.17_158)] to-[oklch(0.55_0.17_158)] rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>T</span>
+              <span className="text-white font-bold" style={{ fontFamily: 'DM Mono, monospace' }}>T</span>
             </div>
             <span className="DM Mono, monospace text-lg text-[oklch(0.14_0.012_255)] dark:text-[oklch(0.96_0.004_240)]" style={{ fontFamily: 'Cabinet Grotesk, sans-serif' }}>
               T.Learn
@@ -189,8 +189,8 @@ const DashboardLayout = () => {
                 )}
               </button>
 
-              {/* ADD LANGUAGE SWITCHER HERE! */}
-              <LanguageSwitcher />
+              {/* ADD LANGUAGE SWITCHER HERE!
+              <LanguageSwitcher /> */}
 
               {/* Notifications */}
               <NotificationBell />

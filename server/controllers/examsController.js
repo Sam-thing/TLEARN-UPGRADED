@@ -202,19 +202,22 @@ export const submitExam = catchAsync(async (req, res) => {
   }
 
   // Grade each question
-  exam.questions.forEach((question, index) => {
-    const userAnswer = answers[index];
-    question.userAnswer = userAnswer;
+  exam.questions.forEach(question => {
+    const submission = answers.find(a => a.questionId === question._id.toString());
+
+    if (submission && submission.answer !== undefined) {
+    // 1. Save the raw answer
+    question.userAnswer = submission.answer;
     
-    if (question.type === 'multiple-choice') {
-      question.isCorrect = userAnswer === question.correctAnswer;
-    } else if (question.type === 'true-false') {
-      question.isCorrect = userAnswer === question.correctAnswer;
-    } else {
-      // Short answer - simple exact match (you can improve this)
-      question.isCorrect = userAnswer?.toLowerCase().trim() === 
-                          question.correctAnswer?.toLowerCase().trim();
-    }
+    // 2. Convert both to strings and normalize for comparison
+    const submittedStr = String(submission.answer).toLowerCase().trim();
+    const correctStr = String(question.correctAnswer || "").toLowerCase().trim();
+    
+    question.isCorrect = (submittedStr === correctStr);
+  } else {
+    question.userAnswer = "";
+    question.isCorrect = false;
+  }
   });
 
   // After exam submission
@@ -222,6 +225,7 @@ export const submitExam = catchAsync(async (req, res) => {
   exam.score = calculateScore(exam);
   exam.passed = exam.score >= 60;
   exam.submittedAt = new Date();
+  exam.completedAt = new Date();
 
   // Count correct/incorrect
   exam.correctAnswers = exam.questions.filter(q => q.isCorrect).length;
