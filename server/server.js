@@ -39,6 +39,8 @@ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 const app        = express();
 const httpServer = createServer(app);
 
+app.set('trust proxy', 1);
+
 // ── ALLOWED ORIGINS ────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',

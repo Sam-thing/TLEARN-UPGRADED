@@ -2,18 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  User,
-  Mail,
-  MapPin,
-  Briefcase,
-  Calendar,
-  Edit,
-  Camera,
-  Save,
-  X,
-  Award,
-  TrendingUp,
-  BookOpen
+  User, Mail, Briefcase, Award, Calendar, Edit, Camera, Save, X, TrendingUp, BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,11 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -42,7 +27,7 @@ const ProfilePage = () => {
     name: '',
     email: '',
     institution: '',
-    level: '',
+    level: 'university',
     bio: ''
   });
 
@@ -87,7 +72,6 @@ const ProfilePage = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -106,7 +90,6 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center mb-6">
-                {/* Avatar */}
                 <div className="relative inline-block mb-4">
                   <Avatar className="w-32 h-32">
                     <AvatarImage src={user?.avatar} />
@@ -133,7 +116,6 @@ const ProfilePage = () => {
 
               <Separator className="my-6" />
 
-              {/* Quick Stats */}
               <div className="space-y-4">
                 <StatItem
                   icon={BookOpen}
@@ -142,13 +124,13 @@ const ProfilePage = () => {
                 />
                 <StatItem
                   icon={TrendingUp}
-                  label="Average Score"
+                  label="Average Understanding"
                   value={`${user?.stats?.averageScore || 0}%`}
                 />
                 <StatItem
                   icon={Award}
                   label="Current Streak"
-                  value={`${user?.stats?.streak || 0} days`}
+                  value={`${user?.streak?.current || 0} days`}
                 />
                 <StatItem
                   icon={Calendar}
@@ -199,28 +181,26 @@ const ProfilePage = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Name */}
-                      <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right text-green-700">
-                        Name
-                      </Label>
-                      <div className="col-span-3">
-                        {isEditing ? (
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                        ) : (
-                        <div className="flex items-center gap-2 text-text-dark dark:text-foreground">
-                          <User className="w-4 h-4 text-text-light" />
-                          {user?.name}
-                        </div>
-                        )}
-                      </div>
-                      </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right text-green-700">
+                  Name
+                </Label>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 text-text-dark dark:text-foreground">
+                      <User className="w-4 h-4 text-text-light" />
+                      {user?.name}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                      {/* Email */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right text-green-700">
                   Email
@@ -242,7 +222,6 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* Institution */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="institution" className="text-right text-green-700">
                   Institution
@@ -264,7 +243,6 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* Level */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="level" className="text-right text-green-700">
                   Level
@@ -290,7 +268,6 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* Bio */}
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="bio" className="text-right pt-2 text-green-700">
                   Bio
@@ -359,7 +336,6 @@ const ProfilePage = () => {
   );
 };
 
-// Stat Item Component
 const StatItem = ({ icon: Icon, label, value }) => {
   return (
     <div className="flex items-center justify-between">
