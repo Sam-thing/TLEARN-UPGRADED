@@ -29,7 +29,7 @@ import goalsRouter from './routes/goals.js';
 import progressRoutes from './routes/progress.js';
 import userRoutes from './routes/user.js';
 import aiRoutes from './routes/ai.js';
-import gamificationRoutes from './routes/gamification.js';
+// import gamificationRoutes from './routes/gamification.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { setupSocket }  from './socket/index.js';
 
