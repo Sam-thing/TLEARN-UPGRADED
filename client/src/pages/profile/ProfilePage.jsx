@@ -24,7 +24,7 @@ import api from '@/utils/axios';
 // ── Profile service (calls the real endpoint) ────────────────────────────────
 const profileService = {
   async update(data) {
-    const res = await api.patch('/auth/profile', data);
+    const res = await api.patch('/auth/users', data);
     return res.user || res;
   },
 };
