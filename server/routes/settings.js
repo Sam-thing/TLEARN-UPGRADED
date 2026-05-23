@@ -11,149 +11,131 @@ import bcrypt from 'bcryptjs';
 const router = Router();
 router.use(protect);
 
-// GET /api/settings - Get user settings
+// ── Helper: get or create settings document for a user ───────────────────────────────────────────────
+const getOrCreate = async (userId) => {
+  let settings = await UserSettings.findOne({ user: userId });
+  if (!settings) {
+    // First time this user hits settings — create defaults silently
+    settings = await UserSettings.create({ user: userId });
+  }
+  return settings;
+};
+
+// GET /api/settings
 router.get('/', async (req, res) => {
   try {
-    let settings = await UserSettings.findOne({ user: req.user.id });
-    
-    // Create default settings if not exist
-    if (!settings) {
-      settings = await UserSettings.createDefaults(req.user.id);
-    }
-    
+    const settings = await getOrCreate(req.user._id);
     res.json({ settings });
   } catch (error) {
-    console.error('Error fetching settings:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Settings GET error:', error);
+    res.status(500).json({ message: 'Failed to load settings' });
   }
 });
 
-// PUT /api/settings - Update settings
+// PUT /api/settings
 router.put('/', async (req, res) => {
   try {
+    const settings = await getOrCreate(req.user._id);
+
     const { theme, language, voiceSpeed, feedbackDetail, notifications, privacy } = req.body;
-    
-    let settings = await UserSettings.findOne({ user: req.user.id });
-    
-    if (!settings) {
-      settings = await UserSettings.createDefaults(req.user.id);
-    }
-    
-    // Update fields
-    if (theme) settings.theme = theme;
-    if (language) settings.language = language;
-    if (voiceSpeed) settings.voiceSpeed = voiceSpeed;
-    if (feedbackDetail) settings.feedbackDetail = feedbackDetail;
-    if (notifications) settings.notifications = { ...settings.notifications, ...notifications };
-    if (privacy) settings.privacy = { ...settings.privacy, ...privacy };
-    
+
+    // Only update fields that were actually sent
+    if (theme       && ['light','dark','system'].includes(theme))         settings.theme = theme;
+    if (language    && ['en','es','fr','sw'].includes(language))          settings.language = language;
+    if (voiceSpeed  && ['slow','normal','fast'].includes(voiceSpeed))     settings.voiceSpeed = voiceSpeed;
+    if (feedbackDetail && ['brief','detailed','comprehensive'].includes(feedbackDetail))
+      settings.feedbackDetail = feedbackDetail;
+    if (notifications && typeof notifications === 'object')
+      settings.notifications = { ...settings.notifications.toObject?.() ?? settings.notifications, ...notifications };
+    if (privacy && typeof privacy === 'object')
+      settings.privacy = { ...settings.privacy.toObject?.() ?? settings.privacy, ...privacy };
+
     await settings.save();
-    
     res.json({ settings });
   } catch (error) {
-    console.error('Error updating settings:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Settings PUT error:', error);
+    res.status(500).json({ message: 'Failed to save settings' });
   }
 });
 
-// POST /api/settings/change-password - Change password
+// POST /api/settings/change-password
 router.post('/change-password', async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
-    
-    if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: 'Please provide both old and new password' });
-    }
-    
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    }
-    
-    // Get user with password
-    const user = await User.findById(req.user.id).select('+password');
-    
-    // Check old password
+
+    if (!oldPassword || !newPassword)
+      return res.status(400).json({ message: 'Both passwords are required' });
+    if (newPassword.length < 8)
+      return res.status(400).json({ message: 'New password must be at least 8 characters' });
+    if (oldPassword === newPassword)
+      return res.status(400).json({ message: 'New password must differ from current password' });
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
-    }
-    
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
+    if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect' });
+
+    const salt = await bcrypt.genSalt(12);
     user.password = await bcrypt.hash(newPassword, salt);
-    
     await user.save();
-    
+
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
-    console.error('Error changing password:', error);
+    console.error('Change-password error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// GET /api/settings/export - Export user data
+// GET /api/settings/export
 router.get('/export', async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    const settings = await UserSettings.findOne({ user: req.user.id });
-    const notes = await Note.find({ user: req.user.id }).populate('topic', 'name subject');
-    const sessions = await Session.find({ user: req.user.id }).populate('topic', 'name subject');
-    const topics = await Topic.find({ createdBy: req.user.id });
-    
-    const exportData = {
-      user: {
-        name: user.name,
-        email: user.email,
-        createdAt: user.createdAt
-      },
+    const [user, settings, notes, sessions, topics] = await Promise.all([
+      User.findById(req.user._id).select('-password'),
+      getOrCreate(req.user._id),
+      Note.find({ user: req.user._id }).populate('topic', 'name subject').lean(),
+      Session.find({ user: req.user._id }).populate('topic', 'name subject').lean(),
+      Topic.find({ createdBy: req.user._id }).lean(),
+    ]);
+
+    res.json({
+      user: { name: user.name, email: user.email, createdAt: user.createdAt },
       settings,
-      statistics: {
-        totalNotes: notes.length,
-        totalSessions: sessions.length,
-        totalTopics: topics.length
-      },
+      statistics: { totalNotes: notes.length, totalSessions: sessions.length, totalTopics: topics.length },
       notes,
       sessions,
       topics,
-      exportedAt: new Date().toISOString()
-    };
-    
-    res.json(exportData);
+      exportedAt: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error('Error exporting data:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Export error:', error);
+    res.status(500).json({ message: 'Failed to export data' });
   }
 });
 
-// DELETE /api/settings/account - Delete account
+// DELETE /api/settings/account
 router.delete('/account', async (req, res) => {
   try {
     const { password } = req.body;
-    
-    if (!password) {
-      return res.status(400).json({ message: 'Please provide your password to confirm' });
-    }
-    
-    // Verify password
-    const user = await User.findById(req.user.id).select('+password');
+    if (!password) return res.status(400).json({ message: 'Password required to delete account' });
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     const isMatch = await bcrypt.compare(password, user.password);
-    
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Incorrect password' });
-    }
-    
-    // Delete all user data
+    if (!isMatch) return res.status(400).json({ message: 'Incorrect password' });
+
     await Promise.all([
-      User.findByIdAndDelete(req.user.id),
-      UserSettings.deleteOne({ user: req.user.id }),
-      Note.deleteMany({ user: req.user.id }),
-      Session.deleteMany({ user: req.user.id }),
-      Topic.deleteMany({ createdBy: req.user.id })
+      User.findByIdAndDelete(req.user._id),
+      UserSettings.deleteOne({ user: req.user._id }),
+      Note.deleteMany({ user: req.user._id }),
+      Session.deleteMany({ user: req.user._id }),
+      Topic.deleteMany({ createdBy: req.user._id }),
     ]);
-    
-    res.json({ message: 'Account deleted successfully' });
+
+    res.json({ message: 'Account deleted' });
   } catch (error) {
-    console.error('Error deleting account:', error);
+    console.error('Delete account error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
