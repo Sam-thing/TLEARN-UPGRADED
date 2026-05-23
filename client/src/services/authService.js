@@ -14,7 +14,7 @@ export const authService = {
   },
 
   async updateProfile(data) {
-    return await api.put('/users/profile', data);
+    return await api.put('/api/users/profile', data);
   },
 
   async changePassword(oldPassword, newPassword) {
