@@ -1,4 +1,4 @@
-// src/pages/profile/ProfilePage.jsx — fully wired backend
+// src/pages/profile/ProfilePage.jsx
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -21,20 +21,11 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/utils/axios';
 
-// ── Profile service (calls the real endpoint) ────────────────────────────────
-const profileService = {
-  async update(data) {
-    const res = await api.patch('/users', data);
-    return res.user || res;
-  },
-};
-
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
-  const [isEditing, setIsEditing]   = useState(false);
-  const [loading, setLoading]       = useState(false);
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [errors, setErrors]         = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [errors, setErrors]       = useState({});
 
   const [formData, setFormData] = useState({
     name:        '',
@@ -43,7 +34,7 @@ export default function ProfilePage() {
     bio:         '',
   });
 
-  // Sync form when user data loads
+  // Keep form in sync with user object
   useEffect(() => {
     if (user) {
       setFormData({
@@ -55,36 +46,35 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  // ── Validation ──────────────────────────────────────────────────────────────
+  // ── Validate before submit ────────────────────────────────────────────────────
   const validate = () => {
     const errs = {};
-    if (!formData.name.trim() || formData.name.trim().length < 2) {
+    if (!formData.name.trim() || formData.name.trim().length < 2)
       errs.name = 'Name must be at least 2 characters';
-    }
-    if (formData.bio && formData.bio.length > 300) {
+    if (formData.bio && formData.bio.length > 300)
       errs.bio = `Bio too long (${formData.bio.length}/300)`;
-    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  // ── Save handler ────────────────────────────────────────────────────────────
+  // ── Save — calls PATCH /auth/profile ─────────────────────────────────────────
   const handleSave = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
-      const updated = await profileService.update({
+      const res = await api.patch('/auth/profile', {
         name:        formData.name.trim(),
         institution: formData.institution.trim(),
         level:       formData.level,
         bio:         formData.bio.trim(),
       });
-      updateUser(updated);
+      // Update context so header + sidebar reflect new name immediately
+      updateUser(res.user || res);
       toast.success('Profile updated!');
       setIsEditing(false);
       setErrors({});
     } catch (err) {
-      const msg = err?.message || 'Failed to update profile';
+      const msg = err?.message || err?.response?.data?.message || 'Failed to update profile';
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -104,10 +94,7 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
-  // ── Avatar upload placeholder ────────────────────────────────────────────────
-  const handleAvatarClick = () => {
-    toast.info('Avatar upload coming soon!');
-  };
+  const handleAvatarClick = () => toast.info('Avatar upload coming soon!');
 
   if (!user) {
     return (
@@ -130,12 +117,11 @@ export default function ProfilePage() {
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* ── Left column — avatar + quick stats ─────────────────────────── */}
+        {/* ── Left: avatar + quick stats ───────────────────────────────── */}
         <div className="lg:col-span-1">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center mb-6">
-                {/* Avatar */}
                 <div className="relative inline-block mb-4">
                   <Avatar className="w-28 h-28 ring-2 ring-forest/20">
                     <AvatarImage src={user.avatar} />
@@ -145,7 +131,6 @@ export default function ProfilePage() {
                   </Avatar>
                   <button
                     onClick={handleAvatarClick}
-                    disabled={avatarUploading}
                     className="absolute bottom-0 right-0 p-2 bg-forest rounded-full text-white hover:bg-forest-dark transition-colors shadow-lg"
                     title="Change avatar"
                   >
@@ -159,11 +144,8 @@ export default function ProfilePage() {
                 <p className="text-sm text-text-medium">{user.email}</p>
 
                 {user.institution && (
-                  <Badge className="mt-3" variant="secondary">
-                    {user.institution}
-                  </Badge>
+                  <Badge className="mt-3" variant="secondary">{user.institution}</Badge>
                 )}
-
                 <p className="text-xs text-text-light mt-2 capitalize">
                   {user.level?.replace('-', ' ')}
                 </p>
@@ -171,7 +153,6 @@ export default function ProfilePage() {
 
               <Separator className="my-4" />
 
-              {/* Quick stats */}
               <div className="space-y-3">
                 <StatRow icon={BookOpen}   label="Sessions"     value={user.stats?.totalSessions  || 0} />
                 <StatRow icon={TrendingUp} label="Avg Score"    value={`${user.stats?.averageScore || 0}%`} />
@@ -182,7 +163,7 @@ export default function ProfilePage() {
           </Card>
         </div>
 
-        {/* ── Right column — editable form ────────────────────────────────── */}
+        {/* ── Right: editable form ─────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -196,14 +177,12 @@ export default function ProfilePage() {
 
                 {!isEditing ? (
                   <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
+                    <Edit className="w-4 h-4 mr-2" /> Edit
                   </Button>
                 ) : (
                   <div className="flex gap-2">
                     <Button onClick={handleCancel} variant="outline" size="sm" disabled={loading}>
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
+                      <X className="w-4 h-4 mr-2" /> Cancel
                     </Button>
                     <Button
                       onClick={handleSave}
@@ -239,11 +218,11 @@ export default function ProfilePage() {
                 )}
               </FieldRow>
 
-              {/* Email — never editable (security) */}
+              {/* Email — read-only */}
               <FieldRow label="Email" icon={Mail}>
                 <span className="text-text-dark dark:text-foreground">{user.email}</span>
                 {isEditing && (
-                  <span className="text-xs text-text-light ml-2">(cannot be changed here)</span>
+                  <span className="text-xs text-text-light ml-2">(change via Settings)</span>
                 )}
               </FieldRow>
 
@@ -269,9 +248,7 @@ export default function ProfilePage() {
                     value={formData.level}
                     onValueChange={v => setFormData(p => ({ ...p, level: v }))}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="high-school">High School</SelectItem>
                       <SelectItem value="university">University</SelectItem>
@@ -287,7 +264,9 @@ export default function ProfilePage() {
 
               {/* Bio */}
               <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right pt-2 text-green-700 col-span-1">Bio</Label>
+                <Label className="text-right pt-2 text-green-700 col-span-1 flex items-center justify-end gap-1.5">
+                  Bio
+                </Label>
                 <div className="col-span-3">
                   {isEditing ? (
                     <div>
@@ -318,26 +297,26 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Learning preferences (read-only for now, settings page handles these) */}
+          {/* Learning preferences pointer */}
           <Card>
             <CardHeader>
               <CardTitle>
                 <span className="text-green-700">Learning</span> Preferences
               </CardTitle>
               <CardDescription>
-                Manage detailed preferences in{' '}
+                Manage theme, notifications and privacy in{' '}
                 <a href="/settings" className="text-forest underline underline-offset-2">Settings</a>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 text-sm text-text-medium">
                 <div className="p-3 bg-muted rounded-lg">
-                  <p className="font-medium text-text-dark dark:text-foreground mb-1">Theme</p>
-                  <p>Managed in Settings</p>
+                  <p className="font-medium text-text-dark dark:text-foreground mb-1">Theme & Language</p>
+                  <p>Managed in Settings → Appearance</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="font-medium text-text-dark dark:text-foreground mb-1">Notifications</p>
-                  <p>Managed in Settings</p>
+                  <p>Managed in Settings → Notifications</p>
                 </div>
               </div>
             </CardContent>
@@ -348,7 +327,7 @@ export default function ProfilePage() {
   );
 }
 
-// ── Small helpers ─────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function StatRow({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center justify-between">
