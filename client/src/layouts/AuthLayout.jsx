@@ -42,7 +42,7 @@ const AuthLayout = () => {
                 className="text-white font-bold text-lg"
                 style={{ fontFamily: 'Cabinet Grotesk, DM Sans, sans-serif' }}
               >
-                T
+               <link rel="icon" type="image/svg+xml" href="/logo.png.png" />
               </span>
             </div>
             <span
