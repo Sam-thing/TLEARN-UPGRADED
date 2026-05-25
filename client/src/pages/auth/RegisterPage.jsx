@@ -184,9 +184,9 @@ const RegisterPage = () => {
           />
           <label htmlFor="terms" className="text-xs text-[oklch(0.52_0.008_255)] leading-relaxed">
             I agree to the{' '}
-            <Link to="/legal/TermsPage" className="text-[oklch(0.62_0.17_158)] hover:underline">Terms</Link>
+            <Link to="/terms" className="text-[oklch(0.62_0.17_158)] hover:underline">Terms</Link>
             {' '}and{' '}
-            <Link to="/legal/PrivacyPage" className="text-[oklch(0.62_0.17_158)] hover:underline">Privacy Policy</Link>
+            <Link to="/privacy" className="text-[oklch(0.62_0.17_158)] hover:underline">Privacy Policy</Link>
           </label>
         </div>
 
