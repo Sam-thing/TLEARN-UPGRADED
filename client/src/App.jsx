@@ -59,15 +59,13 @@ function App() {
                   <Route path="/register" element={<RegisterPage />} />
                 </Route>
 
-                {/* Terms and Privacy */}
-                <Routes>
-                  <Route path="/privacy" element={<PrivacyPage />} />
-                  <Route path="/terms" element={<TermsPage />} />
-                </Routes>
-
                 {/* Protected Routes - Dashboard Layout */}
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<DashboardPage />} />
+
+                  {/* Terms and Privacy */}
+                  <Route path="/privacy" element={<PrivacyPage />} />
+                  <Route path="/terms" element={<TermsPage />} />
                   
                   {/* Topics */}
                   <Route path="/topics" element={<TopicsPage />} />
