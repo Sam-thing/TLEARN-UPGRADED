@@ -8,12 +8,14 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import TeachPage from './pages/teach/TeachPage';
-import TopicsPage from './pages/topics/TopicsPage'; // ← Fixed import
+import TopicsPage from './pages/topics/TopicsPage'; 
 import TopicDetailPage from './pages/topics/TopicDetailPage';
 import NotesPage from './pages/notes/NotesPage';
 import ProgressPage from './pages/progress/ProgressPage';
-import RoomPage from './pages/rooms/RoomPage'; // ← Fixed import
-import RoomChatPage from './pages/rooms/RoomChatPage'; // ← Chat page
+import RoomPage from './pages/rooms/RoomPage'; 
+import RoomChatPage from './pages/rooms/RoomChatPage'; 
+import PrivacyPage from './pages/legal/PrivacyPage';
+import TermsPage from './pages/legal/TermsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import ExamsPage from '@/pages/exams/ExamsPage';
 import TakeExamPage from '@/pages/exams/TakeExamPage';
@@ -56,6 +58,12 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                 </Route>
+
+                {/* Terms and Privacy */}
+                <Routes>
+                  <Route path="/privacy" element={<PrivacyPage />} />
+                  <Route path="/terms" element={<TermsPage />} />
+                </Routes>
 
                 {/* Protected Routes - Dashboard Layout */}
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
