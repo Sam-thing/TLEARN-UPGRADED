@@ -1,4 +1,5 @@
 // src/services/authService.js
+// Fixes: duplicate changePassword methods, wrong updateProfile endpoint
 import api from '@/utils/axios';
 
 export const authService = {
@@ -14,7 +15,7 @@ export const authService = {
     return await api.get('/auth/me');
   },
 
-  // Calls the correct endpoint - /auth/profile
+  // Calls the correct endpoint — PATCH /auth/profile (not /api/users)
   async updateProfile(data) {
     const response = await api.patch('/auth/profile', data);
     return response.user || response;

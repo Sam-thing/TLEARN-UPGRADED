@@ -4,7 +4,7 @@ import { ArrowLeft, FileText } from 'lucide-react';
 
 const LAST_UPDATED  = 'May 25, 2026';
 const APP_NAME      = 'T.Learn';
-const CONTACT_EMAIL = 'legal@tlearn.app';
+const CONTACT_EMAIL = 'njerisamuel701@gmail.com';
 
 export default function TermsPage() {
   return (

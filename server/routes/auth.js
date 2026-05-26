@@ -16,7 +16,7 @@ const router = Router();
 router.post('/register', registerRateLimiter, register);
 router.post('/login',    loginRateLimiter,    login);
 router.get ('/me',       protect,             getMe);
-router.patch('/profile', protect,             updateProfile);
+router.patch('/profile', protect, updateProfile);
 router.patch('/password',protect,             changePassword);
 
 export default router;

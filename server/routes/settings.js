@@ -1,4 +1,4 @@
-// server/routes/settings.js
+// server/routes/settings.js — fixed 500 on missing UserSettings doc
 import { Router } from 'express';
 import UserSettings from '../models/UserSettings.js';
 import User from '../models/User.js';
@@ -11,7 +11,7 @@ import bcrypt from 'bcryptjs';
 const router = Router();
 router.use(protect);
 
-// ── Helper: get or create settings document for a user ───────────────────────────────────────────────
+// ── Helper: get or create settings (fixes the 500) ────────────────────────────
 const getOrCreate = async (userId) => {
   let settings = await UserSettings.findOne({ user: userId });
   if (!settings) {

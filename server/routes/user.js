@@ -1,4 +1,5 @@
 // server/routes/user.js
+// Fixes: 404 on PATCH /api/users — was only handling PUT /:id
 import express from 'express';
 import User from '../models/User.js';
 import { protect } from '../middleware/auth.js';
@@ -6,14 +7,14 @@ import { catchAsync } from '../middleware/errorHandler.js';
 
 const router = express.Router();
 
-// GET /api/users/me 
+// GET /api/users/me — alias for /auth/me (some client code calls this)
 router.get('/me', protect, catchAsync(async (req, res) => {
   const user = await User.findById(req.user._id).select('-password').lean();
   if (!user) return res.status(404).json({ message: 'User not found' });
   res.json({ user });
 }));
 
-// PATCH /api/users/me 
+// PATCH /api/users/me — update own profile (fixes the 404 from ProfilePage)
 router.patch('/me', protect, catchAsync(async (req, res) => {
   const allowed = ['name', 'institution', 'level', 'bio', 'avatar'];
   const updates = {};

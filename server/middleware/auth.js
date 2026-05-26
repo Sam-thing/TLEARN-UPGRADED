@@ -60,7 +60,7 @@ export const protect = async (req, res, next) => {
     let user = getCachedUser(String(userId));
 
     if (!user) {
-      // 4. DB lookup.
+      // 4. DB lookup — only fields we actually need downstream
       user = await User.findById(userId)
         .select('_id name email institution level bio avatar stats streak')
         .lean();  // .lean() returns plain object — 2-3x faster than Mongoose doc
@@ -80,7 +80,7 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Optional: admin-only
+// Optional: admin-only guard
 export const requireAdmin = (req, res, next) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ message: 'Admin access required' });

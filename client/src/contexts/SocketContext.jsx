@@ -1,4 +1,9 @@
 // src/contexts/SocketContext.jsx
+// KEY FIXES:
+// 1. Doesn't attempt connection until HTTP auth is confirmed (prevents timeout spam)
+// 2. Exponential backoff on reconnect (not hammering a cold-starting Render server)
+// 3. Falls back to polling-only if websocket keeps failing (Render free tier issue)
+// 4. Cleans up properly on user logout
 
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
