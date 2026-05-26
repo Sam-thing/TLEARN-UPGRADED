@@ -146,7 +146,7 @@ app.use('/api/exams',         examRoutes);
 app.use('/api/flashcards',    flashcardRoutes);
 app.use('/api/calendar',      calendarRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/gamification',  gamificationRoutes);
+// app.use('/api/gamification',  gamificationRoutes);
 
 // ── HEALTH ─────────────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
