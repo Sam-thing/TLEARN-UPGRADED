@@ -29,6 +29,7 @@ import goalsRouter from './routes/goals.js';
 import progressRoutes from './routes/progress.js';
 import userRoutes from './routes/user.js';
 import aiRoutes from './routes/ai.js';
+import avatarRoutes from './routes/avatar.js'
 // import gamificationRoutes from './routes/gamification.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { setupSocket }  from './socket/index.js';
@@ -143,6 +144,7 @@ app.use('/api/files',         fileMessageRoutes);
 app.use('/api/settings',      settingsRoutes);
 app.use('/api/goals',         goalsRouter);
 app.use('/api/exams',         examRoutes);
+app.use('/api/avatar',        avatarRoutes)
 app.use('/api/flashcards',    flashcardRoutes);
 app.use('/api/calendar',      calendarRoutes);
 app.use('/api/notifications', notificationRoutes);

@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema({
     totalSessions:  { type: Number, default: 0 },
     averageScore:   { type: Number, default: 0 },
     topicsExplored: { type: Number, default: 0 },
-    totalDuration:  { type: Number, default: 0 } // seconds
+    totalDuration:  { type: Number, default: 0 } 
   }
 }, {
   timestamps: true
