@@ -73,6 +73,7 @@ export const protect = async (req, res, next) => {
     }
 
     req.user = user;
+    req.user.id = String(req.user._id);   // Make .id available for backward compatibility
     next();
   } catch (err) {
     console.error('Auth middleware error:', err);

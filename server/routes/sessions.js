@@ -29,7 +29,7 @@ const upload = multer({
 // Get all sessions for current user
 router.get('/', protect, async (req, res) => {
   try {
-    const sessions = await Session.find({ user: req.user.id })
+    const sessions = await Session.find({ user: req.user._id })   // ← Changed to _id
       .populate('topic', 'name subject difficulty')
       .sort({ createdAt: -1 })
       .lean();
@@ -44,7 +44,7 @@ router.get('/', protect, async (req, res) => {
 // Get stats for dashboard - MUST BE BEFORE /:id
 router.get('/stats', protect, async (req, res) => {
   try {
-    const sessions = await Session.find({ user: req.user.id })
+    const sessions = await Session.find({ user: req.user._id })   // ← Changed to _id
       .select('feedback createdAt')
       .lean();
 
@@ -78,7 +78,7 @@ router.get('/stats', protect, async (req, res) => {
       totalSessions,
       averageScore,
       streak: { current: currentStreak },
-      achievements: 0 // Placeholder for now
+      achievements: 0
     });
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -91,7 +91,7 @@ router.get('/recent', protect, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
 
-    const sessions = await Session.find({ user: req.user.id })
+    const sessions = await Session.find({ user: req.user._id })   // ← Changed to _id
       .populate('topic', 'name subject')
       .sort({ createdAt: -1 })
       .limit(limit)
@@ -104,7 +104,7 @@ router.get('/recent', protect, async (req, res) => {
   }
 });
 
-// Get single session by ID - MUST BE AFTER /stats and /recent
+// Get single session by ID - FIXED
 router.get('/:id', protect, async (req, res) => {
   try {
     const session = await Session.findById(req.params.id)
@@ -115,9 +115,10 @@ router.get('/:id', protect, async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Check ownership
-    if (session.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized' });
+    // FIXED: Use req.user._id instead of req.user.id
+    if (session.user.toString() !== req.user._id.toString()) {
+      console.log(`❌ Unauthorized access attempt. Session user: ${session.user}, Requester: ${req.user._id}`);
+      return res.status(403).json({ message: 'Not authorized to view this teaching session' });
     }
 
     res.json(session);
@@ -127,8 +128,7 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-
-// Create new session - USE THE CONTROLLER
+// Create new session
 router.post('/', protect, upload.single('audio'), catchAsync(async (req, res) => {
   return createSession(req, res);  
 }));
@@ -142,8 +142,7 @@ router.delete('/:id', protect, async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Check ownership
-    if (session.user.toString() !== req.user.id) {
+    if (session.user.toString() !== req.user._id.toString()) {   // ← Fixed
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -160,7 +159,7 @@ router.delete('/:id', protect, async (req, res) => {
 router.get('/topic/:topicId', protect, async (req, res) => {
   try {
     const sessions = await Session.find({
-      user: req.user.id,
+      user: req.user._id,                    // ← Fixed
       topic: req.params.topicId
     })
       .sort({ createdAt: -1 })
@@ -174,7 +173,6 @@ router.get('/topic/:topicId', protect, async (req, res) => {
 });
 
 // Retry session for a topic
-// Retry session for a topic - FIXED
 router.post('/retry/:topicId', protect, catchAsync(async (req, res) => {
   const { topicId } = req.params;
 
@@ -183,11 +181,10 @@ router.post('/retry/:topicId', protect, catchAsync(async (req, res) => {
     return res.status(404).json({ message: 'Topic not found' });
   }
 
-  // Create a new session for retry
   const session = await Session.create({
-    user: req.user.id,
+    user: req.user._id,                      // ← Fixed (use _id)
     topic: topicId,
-    transcript: "Retry session - transcript will be recorded",   // ← Provide a valid string
+    transcript: "Retry session - transcript will be recorded",
     originalTranscript: "",
     duration: 0,
     status: 'pending',
