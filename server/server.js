@@ -11,6 +11,9 @@ import dns from 'dns';
 import fs from 'fs';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import timeout from 'express-timeout-handler';
+
 import { initializeSocket } from './socket/socket.js';
 import messageRoutes from './routes/messages.js';
 import notificationRoutes from './routes/notifications.js';
@@ -39,6 +42,9 @@ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 const app        = express();
 const httpServer = createServer(app);
+
+// ✅ TRUST PROXY - Moved to the very top (critical for Render)
+app.set('trust proxy', 1);
 
 // ── ALLOWED ORIGINS ────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
@@ -84,22 +90,38 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
 }));
 
+// ── COMPRESSION ────────────────────────────────────────────────────────────────
+app.use(compression());
+
 // ── GLOBAL RATE LIMIT (all routes) ─────────────────────────────────────────────
 // Separate, tighter limits exist on /auth/login and /auth/register
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 500,                  // 500 requests per IP per window
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests — please slow down' },
-  skip: (req) => req.path === '/api/health', // don't rate-limit health checks
+  skip: (req) => req.path === '/api/health' || req.path === '/ping',
 });
+
 app.use('/api', globalLimiter);
 
 // ── BODY PARSING ───────────────────────────────────────────────────────────────
 app.use(morgan('dev'));
-app.use(express.json({ limit: '2mb' }));          // was 10mb — 2mb is plenty for JSON
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(express.json({ limit: '5mb' }));          // Increased for longer student explanations
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+
+// ── TIMEOUT HANDLER (helps with Render cold starts) ───────────────────────────
+app.use(timeout.handler({
+  timeout: 45000,   // 45 seconds
+  onTimeout: (req, res) => {
+    res.status(503).json({
+      message: "Server is waking up from sleep — please try again in a few seconds",
+      retry: true
+    });
+  }
+}));
 
 // ── STATIC UPLOADS ─────────────────────────────────────────────────────────────
 const uploadDir = path.join(process.cwd(), 'uploaded');
@@ -150,13 +172,18 @@ app.use('/api/calendar',      calendarRoutes);
 app.use('/api/notifications', notificationRoutes);
 // app.use('/api/gamification',  gamificationRoutes);
 
-// ── HEALTH ─────────────────────────────────────────────────────────────────────
+// ── HEALTH + PING ──────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     uptime: process.uptime(),
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
+});
+
+// Lightweight ping route to wake up Render server
+app.get('/ping', (req, res) => {
+  res.status(200).json({ status: 'alive', time: Date.now() });
 });
 
 // ── ERROR HANDLER ──────────────────────────────────────────────────────────────
