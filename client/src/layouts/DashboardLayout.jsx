@@ -388,7 +388,7 @@ const DashboardLayout = () => {
                     >
                       {searchLoading ? (
                         <div className="p-4 text-center text-sm text-[oklch(0.56_0.008_255)]">
-                          Searching...
+                          loading...
                         </div>
                       ) : searchResults.length > 0 ? (
                         <div className="py-2">
