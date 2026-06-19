@@ -77,7 +77,7 @@ const AuthLayout = () => {
                   backgroundClip: 'text'
                 }}
               >
-                teaching.
+                teaching...
               </span>
             </h1>
             <p className="text-base text-[oklch(0.70_0.008_255)] leading-relaxed max-w-sm">
